@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+*.egg-info/
+
+# Proposal checker — sensitive data (never push to GitHub)
+library/
+rules_docs/
+proposals/
+output/
+*_checked.docx
+*.docx
+*.pdf
+*.xlsx
+*.xls
+*.csv
+proposal_rules.yaml
+
+# Logs / misc
+*.log
+.DS_Store
+Thumbs.db

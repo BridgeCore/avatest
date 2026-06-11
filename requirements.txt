@@ -1,0 +1,7 @@
+pandas
+openpyxl
+requests
+python-docx
+pdfplumber
+PyYAML
+rapidfuzz
