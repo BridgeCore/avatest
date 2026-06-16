@@ -1,0 +1,4 @@
+arxiv>=2.1.0
+httpx>=0.27.0
+duckduckgo_search>=6.0.0
+openpyxl>=3.1.0
