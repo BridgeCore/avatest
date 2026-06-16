@@ -1,15 +1,16 @@
 """
-Proposal Validation Tool — Gradio UI
+Proposal Validation Tool -- Gradio UI
 
 Flow:
-  1. User picks proposal + source folder → clicks Run Validation
+  1. User picks proposal + source folder -> clicks Run Validation
   2. App parses all documents (no AI); writes runs/<run_id>/context.json
-  3. App spawns Claude Code as a headless subprocess
-     (claude --dangerously-skip-permissions -p "...")
+  3. App tries to spawn Claude Code as a headless subprocess.
+     If the CLI is not on PATH (manual mode), it prompts the user to
+     type /validate in their Claude Code window instead.
   4. watchdog watches runs/<run_id>/ for results.json to appear
-  5. Once detected: build highlighted .docx + provenance .json → download links
+  5. Once detected: build highlighted .docx + provenance .json -> download links
 
-No Anthropic API key required — Claude Code IS the AI runtime.
+No Anthropic API key required -- Claude Code IS the AI runtime.
 """
 import json
 import logging
@@ -38,9 +39,9 @@ PROJECT_ROOT = Path(__file__).parent
 RUNS_DIR = PROJECT_ROOT / "runs"
 RUNS_DIR.mkdir(exist_ok=True)
 
-MAX_CHUNKS = 5_000       # cap to stay within Claude Code's context window
-CHUNK_MAX_CHARS = 400    # truncate individual source chunks
-TIMEOUT = 600            # seconds before giving up on Claude Code
+MAX_CHUNKS = 5_000
+CHUNK_MAX_CHARS = 400
+TIMEOUT = 600  # seconds
 
 
 # ---------------------------------------------------------------------------
@@ -48,10 +49,6 @@ TIMEOUT = 600            # seconds before giving up on Claude Code
 # ---------------------------------------------------------------------------
 
 def _prepare_context(run_dir: Path, proposal_path: str, source_folder: str) -> dict:
-    """
-    Parse all documents and write context.json to run_dir.
-    Returns a stats dict for the status display.
-    """
     paragraphs = extract_proposal_text(proposal_path)
     para_list = [{"id": i + 1, "text": t} for i, t in enumerate(paragraphs)]
 
@@ -90,17 +87,15 @@ def _prepare_context(run_dir: Path, proposal_path: str, source_folder: str) -> d
 
 
 # ---------------------------------------------------------------------------
-# Main pipeline (Gradio generator — yields status updates in real time)
+# Main pipeline (Gradio streaming generator)
 # ---------------------------------------------------------------------------
 
 def run_validation(proposal_file, source_folder: str):
-    """
-    Gradio streaming generator.
-    Yields (docx_file, json_file, status_text) on each update.
-    """
-    # ── Input checks ─────────────────────────────────────────────────────
+    """Yields (docx_file, json_file, status_text) on each update."""
+
+    # -- Input checks --------------------------------------------------------
     if not proposal_file:
-        yield None, None, "⚠ No proposal file selected."
+        yield None, None, "No proposal file selected."
         return
 
     proposal_path = (
@@ -109,76 +104,80 @@ def run_validation(proposal_file, source_folder: str):
     source_folder = (source_folder or "").strip()
 
     if not source_folder or not Path(source_folder).is_dir():
-        yield None, None, f"⚠ Source folder not found: '{source_folder}'"
+        yield None, None, f"Source folder not found: '{source_folder}'"
         return
 
-    # ── Create run directory ──────────────────────────────────────────────
+    # -- Create run directory ------------------------------------------------
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = RUNS_DIR / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     results_path = run_dir / "results.json"
 
-    yield None, None, f"Run {run_id} started.\nParsing documents…"
+    yield None, None, f"Run {run_id} started.\nParsing documents..."
 
-    # ── Parse + write context.json ────────────────────────────────────────
+    # -- Parse + write context.json ------------------------------------------
     try:
         stats = _prepare_context(run_dir, proposal_path, source_folder)
     except ValueError as exc:
-        yield None, None, f"⚠ Extraction error: {exc}"
+        yield None, None, f"Extraction error: {exc}"
         return
     except Exception as exc:
         logger.exception("Context preparation failed.")
-        yield None, None, f"⚠ Failed to prepare context: {exc}"
+        yield None, None, f"Failed to prepare context: {exc}"
         return
 
-    trunc_warn = "\n  ⚠ Source chunks truncated to 5 000 max." if stats["truncated"] else ""
+    trunc_warn = "\n  Source chunks truncated to 5,000 max." if stats["truncated"] else ""
     yield None, None, (
-        f"Context written to runs/{run_id}/context.json\n"
+        f"Context ready -- runs/{run_id}/context.json\n"
         f"  Proposal paragraphs : {stats['paragraphs']}\n"
         f"  Source files        : {stats['source_files']}\n"
         f"  Source chunks       : {stats['source_chunks']}{trunc_warn}\n\n"
-        f"Launching Claude Code…"
+        f"Starting Claude Code..."
     )
 
-    # ── Start watchdog ────────────────────────────────────────────────────
+    # -- Start watchdog ------------------------------------------------------
     ready_event = threading.Event()
     observer, _ = watch_for_results(results_path, ready_event)
 
-    # ── Spawn Claude Code ─────────────────────────────────────────────────
-    try:
-        proc = start_validation(run_id, PROJECT_ROOT)
-    except FileNotFoundError as exc:
-        observer.stop()
-        observer.join()
-        yield None, None, f"⚠ {exc}"
-        return
+    # -- Spawn Claude Code CLI (or fall back to manual mode) -----------------
+    proc = start_validation(run_id, PROJECT_ROOT)
+    manual_mode = (proc is None)
 
-    # ── Poll until results.json appears, process exits, or timeout ─────────
+    if manual_mode:
+        yield None, None, (
+            f"Context ready -- Run ID: {run_id}\n\n"
+            f"================================================\n"
+            f"  Type /validate in your Claude Code window\n"
+            f"  and press Enter to start validation.\n"
+            f"================================================\n\n"
+            f"This UI will update automatically the moment\n"
+            f"Claude Code writes results.json."
+        )
+
+    # -- Poll until results.json appears or timeout --------------------------
     start_time = time.monotonic()
     tick = 0
 
     while not ready_event.is_set():
         elapsed = int(time.monotonic() - start_time)
 
-        # Belt-and-suspenders: also poll the file directly (watchdog can be
-        # slow on Windows on network shares)
+        # Direct file check as belt-and-suspenders (watchdog slow on Windows)
         if results_path.exists() and results_path.stat().st_size > 0:
             ready_event.set()
             break
 
         if elapsed > TIMEOUT:
-            proc.terminate()
+            if proc:
+                proc.terminate()
             observer.stop()
             observer.join()
             yield None, None, (
-                f"⚠ Timeout after {TIMEOUT}s.\n"
-                f"Claude Code did not write results.json within the time limit.\n"
-                f"Check your terminal for Claude Code output."
+                f"Timeout after {TIMEOUT}s -- results.json was not written.\n"
+                f"Run /validate in Claude Code and try again."
             )
             return
 
-        if proc.poll() is not None:
-            # Claude Code exited — give watchdog/filesystem a moment to settle
+        if not manual_mode and proc.poll() is not None:
             time.sleep(2)
             if results_path.exists() and results_path.stat().st_size > 0:
                 ready_event.set()
@@ -192,32 +191,30 @@ def run_validation(proposal_file, source_folder: str):
             observer.stop()
             observer.join()
             yield None, None, (
-                f"⚠ Claude Code exited (code {proc.returncode}) "
-                f"without writing results.json.\n\n"
-                f"stderr:\n{stderr_tail}"
+                f"Claude Code CLI exited (code {proc.returncode}) "
+                f"without writing results.json.\n\nstderr:\n{stderr_tail}"
             )
             return
 
-        tick = (tick % 3) + 1
-        yield None, None, (
-            f"Claude Code is validating{'.' * tick}\n"
-            f"  Elapsed : {elapsed}s\n"
-            f"  Run ID  : {run_id}\n\n"
-            f"Check your Claude Code terminal window for live progress.\n"
-            f"The UI will update automatically when results.json is written."
-        )
+        if not manual_mode:
+            tick = (tick % 3) + 1
+            yield None, None, (
+                f"Claude Code is validating{'.' * tick}\n"
+                f"  Elapsed : {elapsed}s  |  Run: {run_id}\n\n"
+                f"The UI will update automatically when done."
+            )
         time.sleep(3)
 
     observer.stop()
     observer.join()
 
-    # ── Read results & generate outputs ───────────────────────────────────
-    yield None, None, "Claude Code finished. Generating outputs…"
+    # -- Read results & generate outputs ------------------------------------
+    yield None, None, "Claude Code finished. Generating outputs..."
 
     try:
         results = json.loads(results_path.read_text(encoding="utf-8"))
     except Exception as exc:
-        yield None, None, f"⚠ Could not parse results.json: {exc}"
+        yield None, None, f"Could not parse results.json: {exc}"
         return
 
     try:
@@ -225,7 +222,7 @@ def run_validation(proposal_file, source_folder: str):
         report = build_json_report(results, proposal_path, source_folder)
     except Exception as exc:
         logger.exception("Output generation failed.")
-        yield None, None, f"⚠ Output generation failed: {exc}"
+        yield None, None, f"Output generation failed: {exc}"
         return
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -239,11 +236,11 @@ def run_validation(proposal_file, source_folder: str):
 
     s = report["summary"]
     yield str(docx_out), str(json_out), (
-        f"✅ Validation complete — Run {run_id}\n\n"
+        f"Validation complete -- Run {run_id}\n\n"
         f"  Claims found : {s['total_claims']}\n"
-        f"  🟢 Green     : {s['green']}\n"
-        f"  🔴 Red       : {s['red']}\n"
-        f"  🟡 Yellow    : {s['yellow']}\n"
+        f"  Green        : {s['green']}\n"
+        f"  Red          : {s['red']}\n"
+        f"  Yellow       : {s['yellow']}\n"
         f"  Non-factual  : {s['non_factual']}"
     )
 
@@ -257,11 +254,8 @@ DESCRIPTION = """
 
 Upload a proposal and point to your source documents folder.
 **Claude Code** reasons through every factual claim and produces:
-
-- **Highlighted .docx** — green / red / yellow per claim
-- **Provenance .json** — full audit trail with source citations
-
-*Claude Code must be installed and on your PATH. No API key required.*
+- **Highlighted .docx** -- green / red / yellow per claim
+- **Provenance .json** -- full audit trail with source citations
 """
 
 with gr.Blocks(title="Proposal Validator", theme=gr.themes.Soft()) as app:
@@ -276,19 +270,19 @@ with gr.Blocks(title="Proposal Validator", theme=gr.themes.Soft()) as app:
             )
             source_folder = gr.Textbox(
                 label="Source Documents Folder (full path)",
-                placeholder=r"C:\path\to\sources   or   /path/to/sources",
+                placeholder=r"C:\path\to\sources",
             )
-            run_btn = gr.Button("▶  Run Validation", variant="primary", size="lg")
+            run_btn = gr.Button("Run Validation", variant="primary", size="lg")
 
         with gr.Column(scale=1):
             status_box = gr.Textbox(
                 label="Status / Progress",
-                lines=10,
+                lines=12,
                 interactive=False,
                 show_copy_button=True,
             )
-            docx_output = gr.File(label="⬇ Highlighted .docx", interactive=False)
-            json_output = gr.File(label="⬇ Provenance Report .json", interactive=False)
+            docx_output = gr.File(label="Download Highlighted .docx", interactive=False)
+            json_output = gr.File(label="Download Provenance Report .json", interactive=False)
 
     run_btn.click(
         fn=run_validation,

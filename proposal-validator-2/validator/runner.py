@@ -26,14 +26,18 @@ def _find_claude() -> str:
     )
 
 
-def start_validation(run_id: str, project_root: Path) -> subprocess.Popen:
+def start_validation(run_id: str, project_root: Path) -> subprocess.Popen | None:
     """
-    Spawn a headless Claude Code process to validate the given run.
-    Non-blocking — returns the Popen handle immediately.
+    Try to spawn a headless Claude Code CLI process.
+    Returns the Popen handle if the CLI is available, or None for manual mode
+    (user triggers /validate in the Claude Code window themselves).
     """
-    claude = _find_claude()
+    try:
+        claude = _find_claude()
+    except FileNotFoundError:
+        logger.info("claude CLI not on PATH — falling back to manual mode.")
+        return None
 
-    # Concise prompt; CLAUDE.md (auto-loaded by Claude Code) has full instructions.
     prompt = (
         f"Perform the proposal validation task described in CLAUDE.md.\n"
         f"Run ID: {run_id}\n"
@@ -44,7 +48,7 @@ def start_validation(run_id: str, project_root: Path) -> subprocess.Popen:
     )
 
     cmd = [claude, "--dangerously-skip-permissions", "-p", prompt]
-    logger.info("Launching Claude Code: %s", " ".join(cmd[:2]) + " -p [prompt]")
+    logger.info("Launching Claude Code CLI: %s", " ".join(cmd[:2]) + " -p [prompt]")
 
     return subprocess.Popen(
         cmd,
