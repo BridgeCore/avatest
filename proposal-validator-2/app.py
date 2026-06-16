@@ -3,18 +3,15 @@ Proposal Validation Tool -- Gradio UI
 
 Flow:
   1. User picks proposal + source folder -> clicks Run Validation
-  2. App parses all documents (no AI); writes runs/<run_id>/context.json
-  3. App tries to spawn Claude Code as a headless subprocess.
-     If the CLI is not on PATH (manual mode), it prompts the user to
-     type /validate in their Claude Code window instead.
-  4. watchdog watches runs/<run_id>/ for results.json to appear
-  5. Once detected: build highlighted .docx + provenance .json -> download links
-
-No Anthropic API key required -- Claude Code IS the AI runtime.
+  2. App parses all documents in a background thread, streaming per-file
+     progress to the UI so you can see exactly what is being processed
+  3. Writes runs/<run_id>/context.json
+  4. Prompts user to type /validate in Claude Code (or auto-invokes CLI if available)
+  5. watchdog watches for results.json; generates .docx + .json on detection
 """
 import json
 import logging
-import os
+import queue
 import threading
 import time
 from datetime import datetime, timezone
@@ -41,18 +38,60 @@ RUNS_DIR.mkdir(exist_ok=True)
 
 MAX_CHUNKS = 5_000
 CHUNK_MAX_CHARS = 400
-TIMEOUT = 600  # seconds
+TIMEOUT = 600  # seconds waiting for Claude Code
 
 
 # ---------------------------------------------------------------------------
-# Context preparation
+# Streaming ingestion
 # ---------------------------------------------------------------------------
 
-def _prepare_context(run_dir: Path, proposal_path: str, source_folder: str) -> dict:
+def _stream_prepare_context(run_dir, proposal_path, source_folder):
+    """
+    Generator that yields status strings while parsing, then yields the stats
+    dict as the final item.  Raises on fatal errors.
+    """
+    yield "Extracting proposal text..."
     paragraphs = extract_proposal_text(proposal_path)
     para_list = [{"id": i + 1, "text": t} for i, t in enumerate(paragraphs)]
+    yield f"Proposal: {len(para_list)} paragraphs extracted."
 
-    raw_chunks = ingest_sources(source_folder)
+    # Count files first so we can show X/N
+    folder = Path(source_folder)
+    from validator.ingest import SUPPORTED_EXTENSIONS
+    files = [f for f in sorted(folder.iterdir())
+             if not f.is_dir() and f.suffix.lower() in SUPPORTED_EXTENSIONS]
+    total_files = len(files)
+    yield f"Found {total_files} source file(s) to parse."
+
+    # Ingest in a background thread so we can stream progress
+    status_q = queue.Queue()
+    result_box = [None]
+    error_box = [None]
+
+    def _ingest():
+        try:
+            def on_file(name, num, total):
+                status_q.put(f"Parsing [{num}/{total}]: {name}")
+            chunks = ingest_sources(source_folder, on_file=on_file)
+            result_box[0] = chunks
+        except Exception as exc:
+            error_box[0] = exc
+        finally:
+            status_q.put(None)  # sentinel
+
+    t = threading.Thread(target=_ingest, daemon=True)
+    t.start()
+
+    while True:
+        msg = status_q.get()
+        if msg is None:
+            break
+        yield msg
+
+    if error_box[0]:
+        raise error_box[0]
+
+    raw_chunks = result_box[0]
     truncated = len(raw_chunks) > MAX_CHUNKS
     chunks = [
         {
@@ -73,12 +112,12 @@ def _prepare_context(run_dir: Path, proposal_path: str, source_folder: str) -> d
         "proposal_paragraphs": para_list,
         "source_chunks": chunks,
     }
-
     (run_dir / "context.json").write_text(
         json.dumps(context, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    return {
+    # Yield stats dict as final item
+    yield {
         "paragraphs": len(para_list),
         "source_files": len({c["filename"] for c in chunks}),
         "source_chunks": len(chunks),
@@ -113,11 +152,21 @@ def run_validation(proposal_file, source_folder: str):
     run_dir.mkdir(parents=True, exist_ok=True)
     results_path = run_dir / "results.json"
 
-    yield None, None, f"Run {run_id} started.\nParsing documents..."
+    yield None, None, f"Run {run_id} started."
 
-    # -- Parse + write context.json ------------------------------------------
+    # -- Parse documents with live progress ----------------------------------
+    stats = None
+    status_lines = []
+
     try:
-        stats = _prepare_context(run_dir, proposal_path, source_folder)
+        for item in _stream_prepare_context(run_dir, proposal_path, source_folder):
+            if isinstance(item, dict):
+                stats = item  # final item
+            else:
+                status_lines.append(item)
+                # Keep last 10 lines so the box doesn't grow forever
+                display = "\n".join(status_lines[-10:])
+                yield None, None, display
     except ValueError as exc:
         yield None, None, f"Extraction error: {exc}"
         return
@@ -127,13 +176,14 @@ def run_validation(proposal_file, source_folder: str):
         return
 
     trunc_warn = "\n  Source chunks truncated to 5,000 max." if stats["truncated"] else ""
-    yield None, None, (
-        f"Context ready -- runs/{run_id}/context.json\n"
+    summary = (
+        f"\nContext ready -- runs/{run_id}/context.json\n"
         f"  Proposal paragraphs : {stats['paragraphs']}\n"
-        f"  Source files        : {stats['source_files']}\n"
-        f"  Source chunks       : {stats['source_chunks']}{trunc_warn}\n\n"
-        f"Starting Claude Code..."
+        f"  Source files parsed : {stats['source_files']}\n"
+        f"  Source chunks       : {stats['source_chunks']}{trunc_warn}"
     )
+    status_lines.append(summary)
+    yield None, None, "\n".join(status_lines[-12:])
 
     # -- Start watchdog ------------------------------------------------------
     ready_event = threading.Event()
@@ -145,14 +195,15 @@ def run_validation(proposal_file, source_folder: str):
 
     if manual_mode:
         yield None, None, (
-            f"Context ready -- Run ID: {run_id}\n\n"
+            f"{summary}\n\n"
             f"================================================\n"
             f"  Type /validate in your Claude Code window\n"
             f"  and press Enter to start validation.\n"
             f"================================================\n\n"
-            f"This UI will update automatically the moment\n"
-            f"Claude Code writes results.json."
+            f"This UI will update automatically when done."
         )
+    else:
+        yield None, None, f"{summary}\n\nClaude Code CLI launched. Validating..."
 
     # -- Poll until results.json appears or timeout --------------------------
     start_time = time.monotonic()
@@ -161,7 +212,6 @@ def run_validation(proposal_file, source_folder: str):
     while not ready_event.is_set():
         elapsed = int(time.monotonic() - start_time)
 
-        # Direct file check as belt-and-suspenders (watchdog slow on Windows)
         if results_path.exists() and results_path.stat().st_size > 0:
             ready_event.set()
             break
@@ -199,9 +249,9 @@ def run_validation(proposal_file, source_folder: str):
         if not manual_mode:
             tick = (tick % 3) + 1
             yield None, None, (
+                f"{summary}\n\n"
                 f"Claude Code is validating{'.' * tick}\n"
-                f"  Elapsed : {elapsed}s  |  Run: {run_id}\n\n"
-                f"The UI will update automatically when done."
+                f"  Elapsed : {elapsed}s  |  Run: {run_id}"
             )
         time.sleep(3)
 
@@ -277,7 +327,7 @@ with gr.Blocks(title="Proposal Validator") as app:
         with gr.Column(scale=1):
             status_box = gr.Textbox(
                 label="Status / Progress",
-                lines=12,
+                lines=14,
                 interactive=False,
             )
             docx_output = gr.File(label="Download Highlighted .docx", interactive=False)
