@@ -258,7 +258,7 @@ Upload a proposal and point to your source documents folder.
 - **Provenance .json** -- full audit trail with source citations
 """
 
-with gr.Blocks(title="Proposal Validator", theme=gr.themes.Soft()) as app:
+with gr.Blocks(title="Proposal Validator") as app:
     gr.Markdown(DESCRIPTION)
 
     with gr.Row():
@@ -279,7 +279,6 @@ with gr.Blocks(title="Proposal Validator", theme=gr.themes.Soft()) as app:
                 label="Status / Progress",
                 lines=12,
                 interactive=False,
-                show_copy_button=True,
             )
             docx_output = gr.File(label="Download Highlighted .docx", interactive=False)
             json_output = gr.File(label="Download Provenance Report .json", interactive=False)
