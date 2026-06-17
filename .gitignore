@@ -18,6 +18,10 @@ output/
 *.csv
 proposal_rules.yaml
 
+# Environment / secrets
+.env
+*.env
+
 # Logs / misc
 *.log
 .DS_Store
