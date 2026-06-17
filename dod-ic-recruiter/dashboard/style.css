@@ -1,0 +1,709 @@
+/* =========================================================
+   DOD/IC Recruiting Assistant — Dashboard Styles
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   CSS Reset
+   --------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------
+   Base / Body
+   --------------------------------------------------------- */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  background: #f5f6fa;
+  color: #1a1a2e;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------------------
+   Layout — Container
+   --------------------------------------------------------- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ---------------------------------------------------------
+   Header
+   --------------------------------------------------------- */
+header {
+  border-bottom: 2px solid #1a1a2e;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1a1a2e;
+}
+
+header .subtitle {
+  font-size: 0.875rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------
+   Navigation — Tab Buttons
+   --------------------------------------------------------- */
+nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 22px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover:not(.active) {
+  background: #d1d5db;
+  border-color: #9ca3af;
+}
+
+.tab-btn.active {
+  background: #1a1a2e;
+  color: #ffffff;
+  border-color: #1a1a2e;
+}
+
+/* ---------------------------------------------------------
+   Tab Sections — hidden by default, .active reveals
+   --------------------------------------------------------- */
+.tab-section {
+  display: none;
+}
+
+.tab-section.active {
+  display: block;
+}
+
+/* ---------------------------------------------------------
+   Form Layout
+   --------------------------------------------------------- */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1a1a2e;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="search"],
+textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: #1a1a2e;
+  background: #ffffff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.helper-text {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-top: 5px;
+}
+
+/* ---------------------------------------------------------
+   Tag Container
+   --------------------------------------------------------- */
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  min-height: 44px;
+  background: #ffffff;
+  cursor: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tag-container:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+#tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#tag-input {
+  border: none;
+  border-radius: 0;
+  padding: 2px 4px;
+  min-width: 140px;
+  flex: 1;
+  box-shadow: none;
+}
+
+#tag-input:focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------
+   Tag Pills
+   --------------------------------------------------------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a1a2e;
+  color: #ffffff;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.75;
+  transition: opacity 0.1s;
+}
+
+.tag-remove:hover {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------
+   Slider + Threshold Display
+   --------------------------------------------------------- */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #1a1a2e;
+  cursor: pointer;
+  height: 4px;
+}
+
+.threshold-display {
+  display: inline-block;
+  background: #e5e7eb;
+  color: #1a1a2e;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  min-width: 44px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------
+   File Upload
+   --------------------------------------------------------- */
+.file-upload-wrapper {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  background: #fafbfc;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.file-upload-wrapper:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+input[type="file"] {
+  display: block;
+  margin: 0 auto;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.file-info {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+/* ---------------------------------------------------------
+   Buttons
+   --------------------------------------------------------- */
+.btn-primary {
+  display: block;
+  width: 100%;
+  background: #1a1a2e;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2d2d4e;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  background: transparent;
+  color: #1a1a2e;
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #1a1a2e;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   Status / Feedback Messages
+   --------------------------------------------------------- */
+.status-message {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-top: 10px;
+  border-left: 4px solid transparent;
+}
+
+.status-message.success {
+  border-left-color: #22c55e;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.status-message.error {
+  border-left-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status-message.info {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+/* ---------------------------------------------------------
+   Inline Validation Error Text
+   --------------------------------------------------------- */
+.error-text {
+  display: none;
+  font-size: 0.8125rem;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.error-text[hidden] {
+  display: none;
+}
+
+/* When visible (hidden attribute removed): */
+.error-text:not([hidden]) {
+  display: block;
+}
+
+/* ---------------------------------------------------------
+   Status Bar (Results section)
+   --------------------------------------------------------- */
+.status-bar {
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* ---------------------------------------------------------
+   Metadata Grid
+   --------------------------------------------------------- */
+.metadata-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metadata-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.metadata-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+/* ---------------------------------------------------------
+   Results Table
+   --------------------------------------------------------- */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 12px;
+}
+
+.results-table thead th {
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.results-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.results-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Row match classes */
+.results-table tbody tr.strong-match td:first-child {
+  border-left: 4px solid #22c55e;
+}
+
+.results-table tbody tr.ok-match td:first-child {
+  border-left: 4px solid transparent;
+}
+
+.results-table tbody tr.below-threshold {
+  background: #fefce8;
+}
+
+.results-table tbody tr.below-threshold:hover {
+  background: #fef9c3;
+}
+
+.results-table tbody tr.weak-match {
+  background: #fef2f2;
+}
+
+.results-table tbody tr.weak-match td:first-child {
+  border-left: 4px solid #ef4444;
+}
+
+.results-table tbody tr.weak-match:hover {
+  background: #fee2e2;
+}
+
+/* ---------------------------------------------------------
+   Score Percentage + Below-Threshold Badge
+   --------------------------------------------------------- */
+.score-pct {
+  font-weight: 600;
+}
+
+.badge-below-threshold {
+  display: inline-block;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* ---------------------------------------------------------
+   Detail Panel (row expansion)
+   --------------------------------------------------------- */
+.detail-panel {
+  display: none;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 16px;
+}
+
+.detail-panel.expanded {
+  display: block;
+}
+
+.detail-panel-inner {
+  max-width: 900px;
+}
+
+.detail-section-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+/* Inferred Skills Grid */
+.inferred-skill-list {
+  display: grid;
+  grid-template-columns: 1fr auto auto 2fr;
+  gap: 6px 12px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.inferred-skill-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.inferred-skill-item {
+  display: contents;
+}
+
+.inferred-skill-item > span {
+  font-size: 0.875rem;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+}
+
+.inferred-skill-item .skill-name {
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+/* Confidence Badges */
+.confidence-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.confidence-badge.high {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.confidence-badge.medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.confidence-badge.low {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ---------------------------------------------------------
+   Candidate Notes (inside detail panel)
+   --------------------------------------------------------- */
+.note-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.note-textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 68px;
+  color: #1a1a2e;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.note-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.note-save-btn {
+  padding: 6px 14px;
+  background: #1a1a2e;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.note-save-btn:hover {
+  background: #2d2d4e;
+}
+
+.note-status {
+  font-size: 0.8125rem;
+  margin-top: 4px;
+  color: #22c55e;
+  min-height: 1.2em;
+}
+
+/* ---------------------------------------------------------
+   Utility
+   --------------------------------------------------------- */
+[hidden] {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------
+   Responsive — below 768px
+   --------------------------------------------------------- */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+  }
+
+  .metadata-grid {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .results-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .results-table {
+    min-width: 640px;
+  }
+
+  .inferred-skill-list {
+    grid-template-columns: 1fr auto;
+  }
+
+  .inferred-skill-header:nth-child(3),
+  .inferred-skill-header:nth-child(4),
+  .inferred-skill-item > span:nth-child(3),
+  .inferred-skill-item > span:nth-child(4) {
+    display: none;
+  }
+
+  .note-row {
+    flex-direction: column;
+  }
+
+  .note-save-btn {
+    width: 100%;
+  }
+}

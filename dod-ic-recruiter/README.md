@@ -1,3 +1,63 @@
+## Running the Dashboard
+
+The dashboard gives you a browser interface for setting up searches and viewing results. It runs entirely on your local machine — no internet required, no data leaves your computer.
+
+### Step 1 — Start the server
+
+Open a terminal in the dod-ic-recruiter/ directory:
+
+```
+python dashboard/server.py
+```
+
+Open a browser to **http://localhost:5000** and leave the terminal running. Press Ctrl+C when done.
+
+### Step 2 — Set up a search
+
+In the **Input** tab:
+1. Paste the full job description.
+2. Optionally add required skill overrides using the tag input (press Enter after each skill). These are locked into the search and cannot be removed at the Skill Picture review stage.
+3. Set the match threshold slider (default 70%). Candidates below this are flagged, not hidden.
+4. Optionally upload an iCIMS CSV export.
+5. Click **Run Search**. When the button shows "Waiting for Claude Code..." your inputs are saved.
+
+### Step 3 — Run the skill
+
+Switch to Claude Code and invoke the **dod-ic-recruiter** skill. It will detect your saved inputs automatically and show a summary. Type **use** to proceed with those inputs, or **new** to enter a different JD manually.
+
+### Step 4 — View results
+
+The dashboard checks for results every 15 seconds. When the skill finishes it switches to the **Results** tab automatically. Click any row to expand the full candidate profile. Add notes directly from the dashboard — they are permanent.
+
+You can also click **Refresh Results** at any time.
+
+---
+
+### How the two files work
+
+The dashboard and skill communicate through two files in session/:
+
+| File | Written by | Read by | Purpose |
+|---|---|---|---|
+| session/current_search.json | Dashboard | Skill | Your search inputs — JD, skill overrides, threshold, iCIMS filename |
+| session/last_results.json | Skill | Dashboard | Full ranked candidate output |
+
+Both are plain JSON. Open either in a text editor to inspect or correct if something looks wrong. After the skill reads current_search.json it archives it to session/processed/ automatically.
+
+---
+
+### Troubleshooting
+
+**Dashboard shows no results after the skill finishes** — check that session/last_results.json exists. If missing, the skill may not have completed. Re-run and watch for "Results written to session/last_results.json" at the end.
+
+**Skill did not pick up dashboard inputs** — check session/current_search.json. If already archived, check session/processed/ for a recent timestamped copy.
+
+**iCIMS file not picked up** — confirm the file is in imports/. Check the dashboard server terminal for upload errors.
+
+**Port 5000 in use** — stop the other process using that port, then rerun python dashboard/server.py.
+
+---
+
 # DOD/IC Recruiting Assistant — dod-ic-recruiter Skill
 
 ## Overview

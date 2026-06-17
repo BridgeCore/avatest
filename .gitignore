@@ -21,6 +21,7 @@ proposal_rules.yaml
 # Environment / secrets
 .env
 *.env
+session/
 
 # Logs / misc
 *.log

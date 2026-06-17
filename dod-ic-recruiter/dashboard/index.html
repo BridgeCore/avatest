@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DOD/IC Recruiting Assistant</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- =====================================================
+         Header
+    ====================================================== -->
+    <header>
+      <h1>DOD/IC Recruiting Assistant</h1>
+      <p class="subtitle">Candidate scoring and match analysis for cleared positions</p>
+    </header>
+
+    <!-- =====================================================
+         Navigation — Tabs
+    ====================================================== -->
+    <nav aria-label="Dashboard tabs">
+      <button class="tab-btn active" id="tab-input" type="button" aria-controls="section-input" aria-selected="true">
+        INPUT
+      </button>
+      <button class="tab-btn" id="tab-results" type="button" aria-controls="section-results" aria-selected="false">
+        RESULTS
+      </button>
+    </nav>
+
+    <!-- =====================================================
+         Main Content
+    ====================================================== -->
+    <main>
+
+      <!-- =================================================
+           INPUT Section
+      ================================================== -->
+      <section id="section-input" class="tab-section active" role="tabpanel" aria-labelledby="tab-input">
+
+        <!-- Job Description -->
+        <div class="form-group">
+          <label for="jd-input">Job Description</label>
+          <textarea
+            id="jd-input"
+            rows="12"
+            placeholder="Paste the full job description here."
+            aria-describedby="jd-error"
+          ></textarea>
+          <div id="jd-error" class="error-text" hidden aria-live="polite">
+            Job description is required.
+          </div>
+        </div>
+
+        <!-- Required Skills -->
+        <div class="form-group">
+          <label for="tag-input">Required Skills</label>
+          <div id="tag-container" class="tag-container" role="group" aria-label="Required skills tags">
+            <div id="tags-list" role="list" aria-label="Added skills"></div>
+            <input
+              id="tag-input"
+              type="text"
+              placeholder="Type a skill and press Enter"
+              aria-label="Add a required skill"
+              autocomplete="off"
+            />
+          </div>
+          <p class="helper-text">Press Enter or comma to add. Click &times; to remove.</p>
+        </div>
+
+        <!-- Match Threshold -->
+        <div class="form-group">
+          <label for="threshold">Match Threshold</label>
+          <div class="slider-row">
+            <input
+              type="range"
+              id="threshold"
+              min="0"
+              max="100"
+              value="70"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="70"
+              aria-valuetext="70%"
+            />
+            <span id="threshold-display" class="threshold-display" aria-live="polite">70%</span>
+          </div>
+          <p class="helper-text">Candidates below this score are flagged but not hidden.</p>
+        </div>
+
+        <!-- iCIMS Upload -->
+        <div class="form-group">
+          <label for="icims-file">iCIMS Candidate Upload</label>
+          <div class="file-upload-wrapper">
+            <input
+              type="file"
+              id="icims-file"
+              accept=".csv"
+              aria-describedby="file-info upload-status"
+            />
+          </div>
+          <p id="file-info" class="file-info" hidden></p>
+          <div id="upload-status" aria-live="polite"></div>
+        </div>
+
+        <!-- Run Button -->
+        <div class="form-group">
+          <button id="run-btn" class="btn-primary" type="button">
+            Run Search
+          </button>
+          <div id="run-status" aria-live="polite"></div>
+        </div>
+
+      </section>
+
+      <!-- =================================================
+           RESULTS Section
+      ================================================== -->
+      <section id="section-results" class="tab-section" role="tabpanel" aria-labelledby="tab-results">
+
+        <!-- Status Bar -->
+        <div id="status-bar" class="status-bar" role="status" aria-live="polite">
+          No results yet &mdash; run a search first.
+        </div>
+
+        <!-- Metadata Grid -->
+        <div id="metadata-grid" class="metadata-grid" hidden aria-label="Search metadata"></div>
+
+        <!-- Refresh Button -->
+        <div style="margin-bottom: 12px;">
+          <button id="refresh-btn" class="btn-secondary" type="button">
+            Refresh Results
+          </button>
+        </div>
+
+        <!-- Results Table -->
+        <div id="results-container" class="results-container">
+          <table class="results-table" id="results-table" hidden aria-label="Candidate results">
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Name</th>
+                <th scope="col">Sources</th>
+                <th scope="col">Score</th>
+                <th scope="col">Clearance</th>
+                <th scope="col">Top 3 Skills</th>
+                <th scope="col">Flags</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/dashboard.js" defer></script>
+</body>
+</html>
