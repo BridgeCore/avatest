@@ -1,0 +1,115 @@
+# clearance_signals.yaml
+# Signals used to infer whether a candidate holds or has held a security clearance.
+# Recruiters: add new entries to any list below — no code changes required.
+
+# ic_agencies: Add any IC or DoD agency abbreviation or full name here.
+# A candidate whose employer matches this list receives an ic_agency_employer signal weight.
+ic_agencies:
+  - NSA
+  - CIA
+  - DIA
+  - NRO
+  - NGA
+  - ODNI
+  - SOCOM
+  - DISA
+  - DHS
+  - FBI
+  - DEA
+  - DOE
+  - DARPA
+  - DTRA
+  - MDA
+  - NRL
+  - ARL
+  - AFRL
+  - ONR
+  - ARPA-H
+  - IARPA
+
+# cleared_contractors: Add any company known to hold classified contracts here.
+# A candidate whose employer matches this list receives a cleared_contractor_employer signal weight.
+cleared_contractors:
+  - Booz Allen Hamilton
+  - Leidos
+  - SAIC
+  - Northrop Grumman
+  - Raytheon Technologies
+  - CACI International
+  - ManTech International
+  - Perspecta
+  - General Dynamics IT
+  - Engility
+  - KEYW Group
+  - Parsons Corporation
+  - Amentum
+  - Maximus Federal
+  - Chenega Corporation
+  - Jacobs Engineering
+  - Peraton
+  - L3Harris Technologies
+  - Mitre Corporation
+  - Johns Hopkins APL
+  - Noblis
+  - RAND Corporation
+  - Sandia National Laboratories
+  - Pacific Northwest National Laboratory
+  - SRC Inc
+  - DXC Technology
+  - Unison
+  - Intelligent Systems Corporation
+  - Serco
+  - PAE Government Services
+
+# clearance_title_keywords: Job title fragments that strongly suggest cleared work.
+# A candidate whose current or past titles match any keyword here receives a clearance_title signal weight.
+clearance_title_keywords:
+  - SIGINT analyst
+  - IC systems engineer
+  - NSA contractor
+  - All Source Analyst
+  - Counterintelligence Analyst
+  - Intelligence Analyst
+  - Imagery Analyst
+  - MASINT analyst
+  - HUMINT collector
+  - cleared software engineer
+  - classified program manager
+  - JWICS administrator
+
+# contract_vehicle_keywords: Terminology found in job descriptions or resumes that
+# indicates work on classified networks or compartmented programs.
+# Matches receive a contract_vehicle signal weight.
+contract_vehicle_keywords:
+  - JWICS
+  - SIPRNet
+  - NIPR
+  - classified network
+  - SAP
+  - SAR
+  - SCI
+  - compartmented
+  - TS/SCI
+  - Top Secret
+  - codeword
+
+# signal_weights: Numeric contribution of each signal type to the overall clearance score.
+# confirmed = explicit clearance statement on resume or profile (highest confidence).
+# All other signals are inferred. Weights must sum to a value the thresholds below can interpret.
+signal_weights:
+  confirmed: 1.0
+  ic_agency_employer: 0.7
+  cleared_contractor_employer: 0.7
+  clearance_title: 0.7
+  contract_vehicle: 0.4
+  continuous_gov_contracting: 0.4
+  ic_pipeline_education: 0.4
+  short_term_gov_contract: 0.2
+  security_cert_in_gov_context: 0.2
+
+# inference_thresholds: Minimum cumulative signal score required to classify a candidate
+# as "probable" or "possible" clearance holder.
+# Candidates below 'possible' are flagged as unverified.
+inference_thresholds:
+  probable: 1.4
+  possible: 0.7

@@ -1,0 +1,10 @@
+column_mappings:
+  name: "Candidate Name"
+  current_title: "Current Title"
+  current_employer: "Current Employer"
+  skills: "Skills"
+  skills_delimiter: ";"
+  years_experience: "Years of Experience"
+  location: "Location"
+  application_date: "Application Date"
+  requisition_id: "Req ID"

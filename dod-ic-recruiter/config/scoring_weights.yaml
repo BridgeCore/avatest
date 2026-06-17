@@ -1,0 +1,5 @@
+weights:
+  skill_match: 0.40
+  clearance_signal: 0.25
+  experience_match: 0.20
+  domain_alignment: 0.15

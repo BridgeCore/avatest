@@ -1,0 +1,17 @@
+sources:
+  github: true
+  google: true
+  indeed: true
+  ziprecruiter: true
+  stackoverflow: true
+  orcid: true
+  reddit: true
+  people_data_labs: true
+  usajobs_enrichment: true
+  clearancejobs_enrichment: true
+  seekout_mcp: false
+  icims_mcp: false
+  searxng: false
+  searxng_url: ""
+  seekout_mcp_url: ""
+  icims_mcp_url: ""
