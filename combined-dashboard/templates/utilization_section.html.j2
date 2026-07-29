@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ report_title }}</title>
+<style>
+:root {
+  --bg-primary:      #F3F6FA;
+  --bg-surface:      #FFFFFF;
+  --bg-surface-hover:#EEF2F8;
+  --bg-header:       #EEF2FA;
+  --bg-header-hover: #E4EAF6;
+  --text-primary:    #111827;
+  --text-secondary:  #4B5675;
+  --border:          #D1D9E8;
+  --accent-primary:  #2563EB;
+  --accent-secondary:#EFF4FF;
+  --accent:          #2563EB;
+  --crit:            #B91C1C;
+  --crit-bg:         #FEF2F2;
+  --crit-bd:         #FCA5A5;
+  --warn:            #92400E;
+  --warn-bg:         #FFFBEB;
+  --warn-bd:         #FCD34D;
+  --good:            #065F46;
+  --good-bg:         #ECFDF5;
+  --good-bd:         #A7F3D0;
+}
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+       font-size: 13px; color: var(--text-primary); background: var(--bg-primary); line-height: 1.5; }
+h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+a { color: inherit; }
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.page-wrap { max-width: 1600px; margin: 0 auto; padding: 0 16px 40px; }
+
+/* ── Header bar ───────────────────────────────────────────────────────────── */
+.header-bar {
+  background: var(--bg-header); color: var(--text-primary);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  position: sticky; top: 0; z-index: 200;
+}
+.header-bar h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px; }
+.header-meta { font-size: 11px; opacity: 0.75; text-align: right; }
+
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+.tab-bar {
+  background: var(--bg-surface);
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: stretch;
+  position: sticky; top: 52px; z-index: 190;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+.tab-btn {
+  background: none; border: none; outline: none;
+  padding: 12px 20px;
+  font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-secondary);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+.tab-btn .tab-sublabel { font-size: 10px; font-weight: 400; color: var(--text-secondary); }
+.tab-btn.active .tab-sublabel { color: var(--text-secondary); }
+.tab-pill {
+  display: inline-block; border-radius: 10px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; margin-left: 5px; vertical-align: middle;
+}
+.tab-pill.crit { background: var(--crit-bg); color: var(--crit); border: 1px solid var(--crit-bd); }
+.tab-pill.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.tab-pill.ok   { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-bd); }
+
+/* ── Tab panels ───────────────────────────────────────────────────────────── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Summary cards ────────────────────────────────────────────────────────── */
+.summary-cards {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 16px 0 8px;
+}
+.card {
+  background: var(--bg-surface); border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  min-width: 130px; text-align: center;
+}
+.card .card-num { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.card .card-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.card.red    { border-top: 3px solid #ef4444; }
+.card.yellow { border-top: 3px solid #f59e0b; }
+.card.blue   { border-top: 3px solid #3b82f6; }
+.card.gray   { border-top: 3px solid var(--text-secondary); }
+.card.green  { border-top: 3px solid #22c55e; }
+
+/* ── AI commentary card ───────────────────────────────────────────────────── */
+.ai-card {
+  background: var(--bg-surface); border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: 14px 18px; margin-top: 16px;
+}
+.ai-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.ai-card-headline { font-weight: 700; font-size: 0.95rem; }
+.ai-card-narrative { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.ai-card-action { font-size: 12px; color: var(--text-primary); }
+.ai-card-action b { font-weight: 700; }
+
+/* ── AI discovery cards ───────────────────────────────────────────────────── */
+.disc-card {
+  background: #F5F0FF; border: 1px solid #DDD0FF;
+  border-left: 4px solid #7C3AED;
+  border-radius: 8px; padding: 12px 16px; margin-top: 10px;
+}
+.disc-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #6D28D9; margin-bottom: 5px;
+}
+.disc-title { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+.disc-observation { font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; }
+.disc-action { font-size: 12px; color: var(--text-primary); }
+.disc-confidence {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+}
+.disc-confidence.high   { background: #EDE9FE; color: #5B21B6; }
+.disc-confidence.medium { background: #EEF2FF; color: #4338CA; }
+.disc-confidence.low    { background: #F1F5F9; color: #64748B; }
+
+/* ── Settings gear button ─────────────────────────────────────────────────── */
+.btn-settings {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 9px; cursor: pointer; font-size: 15px; line-height: 1;
+  color: var(--text-secondary); transition: background .15s, color .15s;
+}
+.btn-settings:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* ── Settings modal ───────────────────────────────────────────────────────── */
+.settings-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.35); align-items: center; justify-content: center;
+}
+.settings-overlay.open { display: flex; }
+.settings-modal {
+  background: var(--bg-surface); border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  width: min(680px, 95vw); max-height: 85vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.settings-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.settings-hdr h2 { font-size: 1rem; font-weight: 700; margin: 0; }
+.settings-close {
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  color: var(--text-secondary); line-height: 1; padding: 2px 6px;
+}
+.settings-close:hover { color: var(--text-primary); }
+.settings-body { overflow-y: auto; padding: 20px; flex: 1; }
+.settings-section { margin-bottom: 20px; }
+.settings-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--text-secondary); margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.settings-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.settings-row label { font-size: 13px; min-width: 180px; }
+.settings-num {
+  width: 68px; padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: 5px; font-size: 13px; background: var(--bg-surface);
+  color: var(--text-primary); text-align: right;
+}
+.settings-num:focus { outline: none; border-color: var(--accent-primary); }
+.settings-unit { font-size: 12px; color: var(--text-secondary); }
+.settings-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.settings-tbl th {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary); text-align: center;
+  padding: 5px 8px; border-bottom: 1px solid var(--border);
+}
+.settings-tbl th.l { text-align: left; }
+.settings-tbl td { padding: 5px 8px; border-bottom: 1px solid var(--border); text-align: center; }
+.settings-tbl td.div-name { text-align: left; font-weight: 600; }
+.settings-tbl tr:last-child td { border-bottom: none; }
+.settings-hint { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+.settings-ftr {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.settings-status { font-size: 12px; color: var(--text-secondary); flex: 1; }
+.btn-cancel {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 16px; font-size: 13px; cursor: pointer; color: var(--text-primary);
+}
+.btn-cancel:hover { background: var(--bg-surface-hover); }
+.btn-apply {
+  background: var(--accent-primary); color: #fff; border: none; border-radius: 6px;
+  padding: 7px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-apply:hover { opacity: .88; }
+.btn-apply:disabled { opacity: .45; cursor: not-allowed; }
+.progress-bar-wrap {
+  height: 4px; background: var(--border); border-radius: 2px;
+  overflow: hidden; margin-top: 6px; display: none;
+}
+.progress-bar-fill { height: 100%; background: var(--accent-primary); transition: width .3s; width: 0%; }
+
+/* ── View info banner ─────────────────────────────────────────────────────── */
+.view-banner {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 16px; margin-top: 14px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: 13px; color: var(--text-secondary);
+  border-left: 4px solid var(--accent-primary);
+}
+.view-banner strong { color: var(--text-primary); }
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.section {
+  background: var(--bg-surface); border-radius: 10px;
+  margin-top: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+.section-header {
+  padding: 12px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+.section-header:hover { background: var(--bg-surface-hover); }
+.section-title { font-weight: 700; font-size: 0.95rem; }
+.toggle-icon { font-size: 1rem; transition: transform 0.2s; }
+.section-body { padding: 16px 18px; }
+.section-body.collapsed { display: none; }
+
+/* ── Flag cards ───────────────────────────────────────────────────────────── */
+.flags-grid { display: flex; flex-direction: column; gap: 10px; }
+.lead-group { margin-bottom: 6px; }
+.lead-group-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; margin-bottom: 6px;
+  background: var(--bg-surface); border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.lead-group-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.lead-group-count { font-size: 11px; color: var(--text-secondary); }
+.lead-group-count span { font-weight: 700; color: var(--accent); }
+.flag-card {
+  border-radius: 8px; padding: 14px 16px;
+  border-left: 4px solid;
+}
+.flag-card.critical { background: var(--crit-bg); border-color: var(--crit); }
+.flag-card.warning  { background: var(--warn-bg); border-color: var(--warn); }
+.flag-card-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.flag-name { font-weight: 700; font-size: 0.95rem; }
+.flag-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.flag-explanation { margin-top: 8px; font-size: 12px; }
+.flag-periods { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.period-chip {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: 3px 8px; font-size: 12px; color: var(--text-secondary);
+}
+.flag-table { margin-top: 10px; border-collapse: collapse; width: 100%; font-size: 13px; }
+.flag-table th { background: var(--bg-header); padding: 4px 8px; text-align: left; font-weight: 600; }
+.flag-table td { padding: 3px 8px; border-top: 1px solid var(--border); }
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  border-radius: 3px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+  margin-left: 4px; vertical-align: middle; text-transform: uppercase;
+}
+.badge-pt       { background: #0E1E40; color: #6DAAEE; border: 1px solid #1A3D70; }
+.badge-partial  { background: #1A1535; color: #9E8FE8; border: 1px solid #3A2A60; }
+.badge-corp     { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border); }
+.badge-critical { background: var(--crit-bg); color: var(--crit); border: 1px solid var(--crit-bd); }
+.badge-warning  { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.badge-ok       { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-bd); }
+
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 12px;
+}
+.filter-bar select, .filter-bar input {
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 5px 8px; font-size: 12px;
+  background: var(--bg-surface); cursor: pointer;
+}
+.filter-bar label { font-size: 11px; color: var(--text-secondary); }
+.filter-reset {
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 5px 10px; font-size: 12px; cursor: pointer;
+  background: var(--bg-surface); color: var(--text-secondary);
+}
+.filter-reset:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* ── Team groups (division-first employee view) ─────────────────────────── */
+.team-group { margin-bottom: 18px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.team-group-header {
+  background: var(--bg-surface-hover); padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.team-group-title { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+.team-group-count { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+.team-group-stats { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--text-secondary); }
+.team-group-stats strong { color: var(--text-primary); }
+
+/* ── Employee table ───────────────────────────────────────────────────────── */
+.emp-table-wrap { overflow-x: auto; }
+.emp-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  table-layout: auto;
+}
+.emp-table th {
+  background: var(--bg-header); color: var(--text-primary);
+  padding: 8px 10px; text-align: left; white-space: nowrap;
+  cursor: pointer; user-select: none;
+}
+.emp-table th:hover { background: var(--bg-header-hover); }
+.emp-table th .sort-icon { margin-left: 4px; opacity: 0.6; font-size: 10px; }
+.emp-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.emp-table tr.critical { background: var(--crit-bg); border-left: 3px solid var(--crit); }
+.emp-table tr.warning  { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+.emp-table tr.gray     { background: var(--bg-surface); color: var(--text-secondary); }
+.emp-table tr.ok       { background: var(--bg-surface); }
+.emp-table tr:hover    { filter: brightness(1.12); }
+
+/* ── Sparkline ────────────────────────────────────────────────────────────── */
+.sparkline-cell { min-width: 120px; }
+svg.sparkline { display: block; }
+
+/* ── Summary tables ───────────────────────────────────────────────────────── */
+.summary-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.summary-table th {
+  background: var(--bg-header); color: var(--text-primary);
+  padding: 8px 12px; text-align: left;
+}
+.summary-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+.summary-table tr:hover td { background: var(--bg-surface-hover); }
+
+/* ── Data quality lists ───────────────────────────────────────────────────── */
+.dq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.dq-box { background: var(--bg-surface-hover); border-radius: 6px; padding: 12px; border: 1px solid var(--border); }
+.dq-box h3 { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.dq-list { list-style: none; max-height: 180px; overflow-y: auto; }
+.dq-list li { font-size: 12px; padding: 2px 0; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.dq-empty { font-size: 11px; color: var(--text-secondary); font-style: italic; }
+
+/* ── Config panel ─────────────────────────────────────────────────────────── */
+.config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.config-item { font-size: 12px; display: flex; justify-content: space-between;
+               padding: 5px 0; border-bottom: 1px solid var(--border); }
+.config-key { color: var(--text-secondary); }
+.config-val { font-weight: 600; }
+
+/* ── Employee detail modal ────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal-box {
+  background: var(--bg-surface); border-radius: 12px;
+  max-width: 1100px; width: 100%; max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg-surface); z-index: 10; flex-shrink: 0;
+}
+.modal-title-block { display: flex; flex-direction: column; gap: 2px; }
+.modal-title-name { font-size: 1.1rem; font-weight: 700; }
+.modal-title-meta { font-size: 11px; color: var(--text-secondary); }
+.modal-close {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 1rem; cursor: pointer; color: var(--text-secondary);
+  padding: 4px 10px; flex-shrink: 0;
+}
+.modal-close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.modal-body { padding: 16px 20px; overflow-x: auto; flex: 1; }
+.detail-table {
+  width: 100%; border-collapse: collapse; font-size: 11.5px;
+  white-space: nowrap;
+}
+.detail-table th {
+  background: var(--bg-header); color: var(--text-primary);
+  padding: 7px 10px; text-align: right; font-weight: 600;
+}
+.detail-table th:first-child { text-align: left; }
+.detail-table td {
+  padding: 5px 10px; border-bottom: 1px solid var(--border); text-align: right;
+}
+.detail-table td:first-child { text-align: left; font-weight: 500; }
+.detail-table tr.no-data td { color: var(--text-secondary); background: var(--bg-surface-hover); }
+.detail-table tr.crit-row td { background: var(--crit-bg); }
+.detail-table tr.warn-row td { background: var(--warn-bg); }
+.detail-table tfoot td {
+  padding: 7px 10px; font-weight: 600; background: var(--bg-surface-hover);
+  border-top: 2px solid var(--border);
+}
+.detail-table tfoot td:first-child { text-align: left; }
+.modal-footnote {
+  font-size: 10px; color: var(--text-secondary); margin-top: 10px; padding-bottom: 4px;
+}
+
+/* Clickable table rows */
+.emp-table tbody tr { cursor: pointer; }
+
+/* ── Print ────────────────────────────────────────────────────────────────── */
+@media print {
+  .header-bar, .tab-bar { position: static; }
+  .tab-panel { display: block !important; }
+  .section-body.collapsed { display: block !important; }
+  .filter-bar { display: none; }
+  .emp-table th { position: static; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- HEADER                                                                   -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-modal">
+    <div class="settings-hdr">
+      <h2>⚙ Threshold Settings</h2>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <!-- Persistence -->
+      <div class="settings-section">
+        <div class="settings-section-title">Trend Persistence</div>
+        <div class="settings-row">
+          <label>Consecutive periods to flag</label>
+          <input type="number" class="settings-num" id="s-persist" min="1" max="12" step="1" value="3">
+          <span class="settings-unit">periods</span>
+        </div>
+        <div class="settings-hint">An employee must fall below the threshold for this many periods in a row before a flag is raised.</div>
+      </div>
+      <!-- Global thresholds -->
+      <div class="settings-section">
+        <div class="settings-section-title">Global Billable Utilization Thresholds</div>
+        <div class="settings-row">
+          <label>Benchmark (good)</label>
+          <input type="number" class="settings-num" id="s-bench" min="0" max="100" step="1" value="75">
+          <span class="settings-unit">%</span>
+        </div>
+        <div class="settings-row">
+          <label>Warning below</label>
+          <input type="number" class="settings-num" id="s-warn" min="0" max="100" step="1" value="65">
+          <span class="settings-unit">%</span>
+        </div>
+        <div class="settings-row">
+          <label>Critical below</label>
+          <input type="number" class="settings-num" id="s-crit" min="0" max="100" step="1" value="50">
+          <span class="settings-unit">%</span>
+        </div>
+      </div>
+      <!-- Per-division overrides -->
+      <div class="settings-section">
+        <div class="settings-section-title">Per-Division Overrides <span style="font-weight:400;text-transform:none;letter-spacing:0">(blank = use global)</span></div>
+        <table class="settings-tbl" id="div-tbl">
+          <thead><tr>
+            <th class="l">Division</th>
+            <th>Benchmark %</th>
+            <th>Warning %</th>
+            <th>Critical %</th>
+          </tr></thead>
+          <tbody id="div-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="settings-hint">Leave a field blank to inherit the global value for that division.</div>
+      </div>
+    </div>
+    <div class="settings-ftr">
+      <div>
+        <div class="settings-status" id="s-status">Loading current settings…</div>
+        <div class="progress-bar-wrap" id="s-progress-wrap">
+          <div class="progress-bar-fill" id="s-progress-fill"></div>
+        </div>
+      </div>
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-apply" id="s-apply-btn" onclick="applySettings()">Save &amp; Re-run</button>
+    </div>
+  </div>
+</div>
+
+<div class="header-bar">
+  <div>
+    <h1>{{ report_title }}</h1>
+    <div style="font-size:11px;opacity:.7;margin-top:2px;">
+      Full Period: {{ period_range }}
+      {% if pipeline_summary %}
+        &nbsp;|&nbsp; Run: {{ pipeline_summary.get('Run Date', '') }}
+      {% endif %}
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="header-meta">Generated {{ generated_date }}</div>
+    <button class="btn-settings" onclick="openSettings()" title="Threshold settings">⚙</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB BAR                                                                  -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-bar" role="tablist">
+  {% for view in views %}
+  <button class="tab-btn{% if loop.first %} active{% endif %}"
+          data-tab="{{ view.view_id }}"
+          onclick="switchTab('{{ view.view_id }}')"
+          role="tab">
+    {{ view.view_label }}
+    {% if view.critical_count > 0 %}
+      <span class="tab-pill crit">{{ view.critical_count }}C</span>
+    {% endif %}
+    {% if view.warning_count > 0 %}
+      <span class="tab-pill warn">{{ view.warning_count }}W</span>
+    {% endif %}
+    <span class="tab-sublabel">{{ view.view_sublabel }}</span>
+  </button>
+  {% endfor %}
+</div>
+
+<div class="page-wrap">
+
+{% for view in views %}
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB PANEL: {{ view.view_label }}                                          -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-{{ view.view_id }}" class="tab-panel{% if loop.first %} active{% endif %}" role="tabpanel">
+
+  <!-- View info banner -->
+  <div class="view-banner">
+    <span><strong>{{ view.view_label }}</strong> &mdash; {{ view.view_sublabel }}</span>
+    <span>Date range: <strong>{{ view.view_period_range }}</strong></span>
+    <span>{{ view.view_period_count }} half-month period{{ 's' if view.view_period_count != 1 else '' }}</span>
+    <span>Persistence threshold: <strong>{{ view.view_persistence }}</strong> consecutive period{{ 's' if view.view_persistence != 1 else '' }}</span>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-cards">
+    <div class="card blue">
+      <div class="card-num">{{ employees_analyzed }}</div>
+      <div class="card-label">Employees Analyzed</div>
+    </div>
+    <div class="card gray">
+      <div class="card-num">{{ corp_roles_count }}</div>
+      <div class="card-label">Corp Roles Excluded</div>
+    </div>
+    <div class="card gray">
+      <div class="card-num">{{ pt_count }}</div>
+      <div class="card-label">PT Employees</div>
+    </div>
+    <div class="card red">
+      <div class="card-num">{{ view.critical_count }}</div>
+      <div class="card-label">Critical Flags</div>
+    </div>
+    <div class="card yellow">
+      <div class="card-num">{{ view.warning_count }}</div>
+      <div class="card-label">Warning Flags</div>
+    </div>
+    <div class="card gray">
+      <div class="card-num">{{ data_quality_issues }}</div>
+      <div class="card-label">Data Quality Issues</div>
+    </div>
+  </div>
+
+  {% if view.ai_commentary %}
+  <div class="ai-card">
+    <div class="ai-card-top">
+      <div class="ai-card-headline">{{ view.ai_commentary.headline }}</div>
+      {% if view.ai_commentary.risk_level == 'high' %}<span class="badge badge-critical">High Risk</span>
+      {% elif view.ai_commentary.risk_level == 'medium' %}<span class="badge badge-warning">Medium Risk</span>
+      {% else %}<span class="badge badge-ok">Low Risk</span>{% endif %}
+    </div>
+    <div class="ai-card-narrative">{{ view.ai_commentary.narrative }}</div>
+    <div class="ai-card-action"><b>Recommended:</b> {{ view.ai_commentary.recommended_action }}</div>
+  </div>
+  {% endif %}
+
+  {% if loop.first and util_discoveries %}
+  {% for d in util_discoveries %}
+  <div class="disc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+      <div class="disc-label">AI Discovery</div>
+      <span class="disc-confidence {{ d.confidence }}">{{ d.confidence }}</span>
+    </div>
+    <div class="disc-title">{{ d.title }}</div>
+    <div class="disc-observation">{{ d.observation }}</div>
+    <div class="disc-action"><b>Suggested:</b> {{ d.suggested_action }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ── Critical Flags ────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)" data-open="true">
+      <span class="section-title">Critical Flags ({{ view.critical_flags|length }})</span>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="section-body">
+      {% if view.critical_flags %}
+      <div class="flags-grid">
+        {% for lead, lead_flags in view.critical_flags | groupby('portfolio_lead') %}
+        <div class="lead-group">
+          <div class="lead-group-hdr">
+            <span class="lead-group-name">{{ lead or 'Unassigned' }}</span>
+            <span class="lead-group-count"><span>{{ lead_flags | list | length }}</span> flagged</span>
+          </div>
+        {% for flag in lead_flags %}
+        <div class="flag-card critical">
+          <div class="flag-card-top">
+            <div>
+              <span class="flag-name">{{ flag.person }}</span>
+              {% if flag.is_pt %}<span class="badge badge-pt">PT</span>{% endif %}
+              {% if flag.is_partial %}<span class="badge badge-partial">Partial Period</span>{% endif %}
+              <div class="flag-meta">{{ flag.division }} &nbsp;&middot;&nbsp; {{ flag.portfolio_lead }}</div>
+            </div>
+            <span class="badge badge-critical">Critical</span>
+          </div>
+          {% for issue in flag.issues %}
+          <div style="margin-top:10px;{% if not loop.first %}padding-top:10px;border-top:1px solid var(--crit-bd);{% endif %}">
+            <div style="font-weight:600;font-size:12px;">
+              {{ issue.trend_label }}
+              {% if issue.severity == 'warning' %}<span class="badge badge-warning" style="font-size:10px;margin-left:6px;">Warning</span>{% endif %}
+            </div>
+            <div class="flag-explanation">{{ issue.explanation }}</div>
+            <div class="flag-periods">
+              {% for lbl in issue.period_labels %}<span class="period-chip">{{ lbl }}</span>{% endfor %}
+            </div>
+            {% if issue.per_period_metrics %}
+            <div style="overflow-x:auto;margin-top:6px;">
+            <table class="flag-table">
+              <thead>
+                <tr>
+                  <th>Period</th><th>Bill. Util*</th><th>Direct Util*</th>
+                  <th>Bill. Hrs</th><th data-opt>PTO</th><th data-opt>Holiday</th><th data-opt>LWOP</th><th data-opt>Other</th>
+                  <th>Time-Off Total</th><th>Sched. Hrs</th><th>Adj. Avail*</th>
+                  <th data-opt>B&amp;P Hrs</th><th data-opt>B&amp;P %</th>
+                  <th data-opt>G&amp;A Hrs</th><th data-opt>G&amp;A %</th>
+                  <th data-opt>IR&amp;D Hrs</th><th data-opt>IR&amp;D %</th>
+                  <th data-opt>Overhead Hrs</th><th data-opt>Overhead %</th>
+                  <th data-opt>Non-Bill Hrs</th><th>Non-Bill %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in issue.per_period_metrics %}
+                <tr{% if m.no_data %} style="background:var(--bg-surface-hover);"{% endif %}>
+                  <td>{{ m.period_label }}{% if m.no_data %} <span class="badge badge-corp">No Data</span>{% endif %}</td>
+                  <td>{{ m.billable_util }}</td><td>{{ m.direct_util }}</td>
+                  <td>{{ m.billable_hrs }}</td><td>{{ m.pto_hrs }}</td>
+                  <td>{{ m.holiday_hrs }}</td><td>{{ m.lwop_hrs }}</td>
+                  <td>{{ m.other_hrs }}</td><td>{{ m.time_off_hrs }}</td>
+                  <td>{{ m.net_available }}</td><td>{{ m.effective_available }}</td>
+                  <td>{{ m.bp_hrs }}</td><td>{{ m.bp_ratio }}</td>
+                  <td>{{ m.ga_hrs }}</td><td>{{ m.ga_ratio }}</td>
+                  <td>{{ m.ird_hrs }}</td><td>{{ m.ird_ratio }}</td>
+                  <td>{{ m.overhead_hrs }}</td><td>{{ m.overhead_ratio }}</td>
+                  <td>{{ m.nonbillable_hrs }}</td><td>{{ m.nonbillable_ratio }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            </div>
+            <div style="font-size:10px;color:#9ca3af;margin-top:4px;">* Utilization calculated against Adj. Avail (Scheduled Hrs minus Time-Off). "No Data" rows had zero hours logged in every category despite scheduled hours — likely an unsubmitted timesheet, not true low utilization.</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        </div><!-- /lead-group -->
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:#9ca3af;font-style:italic;">No critical flags for this period range.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Warning Flags ─────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)" data-open="true">
+      <span class="section-title">Warning Flags ({{ view.warning_flags|length }})</span>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="section-body">
+      {% if view.warning_flags %}
+      <div class="flags-grid">
+        {% for lead, lead_flags in view.warning_flags | groupby('portfolio_lead') %}
+        <div class="lead-group">
+          <div class="lead-group-hdr">
+            <span class="lead-group-name">{{ lead or 'Unassigned' }}</span>
+            <span class="lead-group-count"><span>{{ lead_flags | list | length }}</span> flagged</span>
+          </div>
+        {% for flag in lead_flags %}
+        <div class="flag-card warning">
+          <div class="flag-card-top">
+            <div>
+              <span class="flag-name">{{ flag.person }}</span>
+              {% if flag.is_pt %}<span class="badge badge-pt">PT</span>{% endif %}
+              {% if flag.is_partial %}<span class="badge badge-partial">Partial Period</span>{% endif %}
+              <div class="flag-meta">{{ flag.division }} &nbsp;&middot;&nbsp; {{ flag.portfolio_lead }}</div>
+            </div>
+            <span class="badge badge-warning">Warning</span>
+          </div>
+          {% for issue in flag.issues %}
+          <div style="margin-top:10px;{% if not loop.first %}padding-top:10px;border-top:1px solid var(--warn-bd);{% endif %}">
+            <div style="font-weight:600;font-size:12px;">{{ issue.trend_label }}</div>
+            <div class="flag-explanation">{{ issue.explanation }}</div>
+            <div class="flag-periods">
+              {% for lbl in issue.period_labels %}<span class="period-chip">{{ lbl }}</span>{% endfor %}
+            </div>
+            {% if issue.per_period_metrics %}
+            <div style="overflow-x:auto;margin-top:6px;">
+            <table class="flag-table">
+              <thead>
+                <tr>
+                  <th>Period</th><th>Bill. Util*</th><th>Direct Util*</th>
+                  <th>Bill. Hrs</th><th data-opt>PTO</th><th data-opt>Holiday</th><th data-opt>LWOP</th><th data-opt>Other</th>
+                  <th>Time-Off Total</th><th>Sched. Hrs</th><th>Adj. Avail*</th>
+                  <th data-opt>B&amp;P Hrs</th><th data-opt>B&amp;P %</th>
+                  <th data-opt>G&amp;A Hrs</th><th data-opt>G&amp;A %</th>
+                  <th data-opt>IR&amp;D Hrs</th><th data-opt>IR&amp;D %</th>
+                  <th data-opt>Overhead Hrs</th><th data-opt>Overhead %</th>
+                  <th data-opt>Non-Bill Hrs</th><th>Non-Bill %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in issue.per_period_metrics %}
+                <tr{% if m.no_data %} style="background:var(--bg-surface-hover);"{% endif %}>
+                  <td>{{ m.period_label }}{% if m.no_data %} <span class="badge badge-corp">No Data</span>{% endif %}</td>
+                  <td>{{ m.billable_util }}</td><td>{{ m.direct_util }}</td>
+                  <td>{{ m.billable_hrs }}</td><td>{{ m.pto_hrs }}</td>
+                  <td>{{ m.holiday_hrs }}</td><td>{{ m.lwop_hrs }}</td>
+                  <td>{{ m.other_hrs }}</td><td>{{ m.time_off_hrs }}</td>
+                  <td>{{ m.net_available }}</td><td>{{ m.effective_available }}</td>
+                  <td>{{ m.bp_hrs }}</td><td>{{ m.bp_ratio }}</td>
+                  <td>{{ m.ga_hrs }}</td><td>{{ m.ga_ratio }}</td>
+                  <td>{{ m.ird_hrs }}</td><td>{{ m.ird_ratio }}</td>
+                  <td>{{ m.overhead_hrs }}</td><td>{{ m.overhead_ratio }}</td>
+                  <td>{{ m.nonbillable_hrs }}</td><td>{{ m.nonbillable_ratio }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            </div>
+            <div style="font-size:10px;color:#9ca3af;margin-top:4px;">* Utilization calculated against Adj. Avail (Scheduled Hrs minus Time-Off). "No Data" rows had zero hours logged in every category despite scheduled hours — likely an unsubmitted timesheet, not true low utilization.</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        </div><!-- /lead-group -->
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:#9ca3af;font-style:italic;">No warning flags for this period range.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Utilization by Team ──────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)" data-open="true">
+      <span class="section-title">Utilization by Team ({{ view.team_groups|length }} division{{ 's' if view.team_groups|length != 1 else '' }}, {{ view.table_rows|length }} employees)</span>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="filter-bar">
+        <label>Division:
+          <select id="f-division-{{ view.view_id }}" onchange="applyFilters('{{ view.view_id }}')">
+            <option value="">All</option>
+            {% for g in view.team_groups %}<option value="{{ g.division }}">{{ g.division }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Portfolio Lead:
+          <select id="f-lead-{{ view.view_id }}" onchange="applyFilters('{{ view.view_id }}')">
+            <option value="">All</option>
+            {% set leads = view.table_rows|map(attribute='portfolio_lead')|unique|sort %}
+            {% for l in leads %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Flag:
+          <select id="f-flag-{{ view.view_id }}" onchange="applyFilters('{{ view.view_id }}')">
+            <option value="">All</option>
+            <option value="Critical">Critical</option>
+            <option value="Warning">Warning</option>
+            <option value="OK">OK</option>
+          </select>
+        </label>
+        <label>Type:
+          <select id="f-emptype-{{ view.view_id }}" onchange="applyFilters('{{ view.view_id }}')">
+            <option value="">All</option>
+            <option value="PT">PT Only</option>
+            <option value="FT">FT Only</option>
+            <option value="Corp">Corp Role</option>
+            <option value="Partial">Partial Period</option>
+          </select>
+        </label>
+        <label>Search:
+          <input type="text" id="f-search-{{ view.view_id }}" placeholder="Name..."
+                 oninput="applyFilters('{{ view.view_id }}')" style="width:140px;">
+        </label>
+        <button class="filter-reset" onclick="resetFilters('{{ view.view_id }}')">Reset</button>
+        <span id="f-count-{{ view.view_id }}" style="font-size:11px;color:#6b7280;"></span>
+      </div>
+
+      {% for g in view.team_groups %}
+      <div class="team-group" data-view="{{ view.view_id }}" id="team-group-{{ view.view_id }}-{{ loop.index }}">
+        <div class="team-group-header">
+          <div class="team-group-title">
+            {{ g.division }}
+            <span class="team-group-count">{{ g.member_count }} employee{{ 's' if g.member_count != 1 else '' }}</span>
+          </div>
+          <div class="team-group-stats">
+            <span>Avg Bill. Util: <strong>{{ g.avg_billable_util }}</strong></span>
+            <span>Avg Direct Util: <strong>{{ g.avg_direct_util }}</strong></span>
+            {% if g.critical_count > 0 %}<span class="badge badge-critical">{{ g.critical_count }} Critical</span>{% endif %}
+            {% if g.warning_count > 0 %}<span class="badge badge-warning">{{ g.warning_count }} Warning</span>{% endif %}
+            {% if g.critical_count == 0 and g.warning_count == 0 %}<span class="badge badge-ok">All OK</span>{% endif %}
+          </div>
+        </div>
+        <div class="emp-table-wrap">
+          <table class="emp-table" id="emp-table-{{ view.view_id }}-{{ loop.index }}">
+            <thead>
+              <tr>
+                <th onclick="sortTable(0,'str','{{ view.view_id }}-{{ loop.index }}')">Name <span class="sort-icon">⇅</span></th>
+                <th>Badges</th>
+                <th onclick="sortTable(2,'str','{{ view.view_id }}-{{ loop.index }}')">Org <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(3,'str','{{ view.view_id }}-{{ loop.index }}')">Lead <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(4,'str','{{ view.view_id }}-{{ loop.index }}')">Type <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(5,'num','{{ view.view_id }}-{{ loop.index }}')">Bill. Util <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(6,'num','{{ view.view_id }}-{{ loop.index }}')">Direct Util <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(7,'num','{{ view.view_id }}-{{ loop.index }}')">Non-Bill % <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(8,'num','{{ view.view_id }}-{{ loop.index }}')">G&amp;A % <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(9,'num','{{ view.view_id }}-{{ loop.index }}')">B&amp;P Hrs <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(10,'num','{{ view.view_id }}-{{ loop.index }}')">PTO Hrs <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(11,'num','{{ view.view_id }}-{{ loop.index }}')">LWOP Hrs <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(12,'str','{{ view.view_id }}-{{ loop.index }}')">Flag <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable(13,'num','{{ view.view_id }}-{{ loop.index }}')">Periods Active <span class="sort-icon">⇅</span></th>
+                <th class="sparkline-cell">Billable Util Trend (Full Year)</th>
+              </tr>
+            </thead>
+            <tbody id="emp-tbody-{{ view.view_id }}-{{ loop.index }}">
+              {% for row in g.rows %}
+              <tr class="{{ row.row_color }}"
+                  onclick="openEmployeeModal(this)"
+                  data-division="{{ row.division }}"
+                  data-lead="{{ row.portfolio_lead }}"
+                  data-flag="{{ row.flag_status }}"
+                  data-org="{{ row.person_org }}"
+                  data-type="{{ row.project_type }}"
+                  data-pt="{{ 'PT' if row.is_pt else '' }}"
+                  data-corp="{{ 'Corp' if row.is_corp else '' }}"
+                  data-partial="{{ 'Partial' if row.is_partial else '' }}"
+                  data-name="{{ row.person }}"
+                  data-col6="{{ row.avg_billable_util_raw }}"
+                  data-col7="{{ row.avg_direct_util_raw }}"
+                  data-col8="{{ row.avg_nonbillable_pct }}"
+                  data-col9="{{ row.avg_ga_pct }}"
+                  data-col10="{{ row.total_bp_hrs }}"
+                  data-col11="{{ row.total_pto_hrs }}"
+                  data-col12="{{ row.total_lwop_hrs }}"
+                  data-col14="{{ row.periods_active }}"
+                  data-detail='{{ row.detail_periods }}'>
+                <td>{{ row.person }}</td>
+                <td>
+                  {% if row.is_pt %}<span class="badge badge-pt">PT</span>{% endif %}
+                  {% if row.is_partial %}<span class="badge badge-partial">Partial</span>{% endif %}
+                  {% if row.is_corp %}<span class="badge badge-corp">Corp Role</span>{% endif %}
+                </td>
+                <td>{{ row.person_org }}</td>
+                <td>{{ row.portfolio_lead }}</td>
+                <td>{{ row.project_type }}</td>
+                <td>{{ row.avg_billable_util }}</td>
+                <td>{{ row.avg_direct_util }}</td>
+                <td>{{ row.avg_nonbillable_pct }}</td>
+                <td>{{ row.avg_ga_pct }}</td>
+                <td>{{ row.total_bp_hrs }}</td>
+                <td>{{ row.total_pto_hrs }}</td>
+                <td>{{ row.total_lwop_hrs }}</td>
+                <td>
+                  {% if row.flag_status == 'Critical' %}<span class="badge badge-critical">Critical</span>
+                  {% elif row.flag_status == 'Warning' %}<span class="badge badge-warning">Warning</span>
+                  {% else %}<span class="badge badge-ok">OK</span>{% endif %}
+                </td>
+                <td>{{ row.periods_active }}</td>
+                <td class="sparkline-cell">
+                  <svg class="sparkline" width="120" height="36"
+                       data-spark='{{ row.sparkline }}'
+                       data-warn="{{ billable_warning_threshold }}"
+                       data-crit="{{ billable_critical_threshold }}">
+                  </svg>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Portfolio Lead Summary ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)" data-open="true">
+      <span class="section-title">Portfolio Lead Summary</span>
+      <span class="toggle-icon">▾</span>
+    </div>
+    <div class="section-body">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Portfolio Lead</th>
+            <th># Employees</th>
+            <th>Avg Billable Util</th>
+            <th>Avg Direct Util</th>
+            <th>Billable Util Trend</th>
+            <th>Critical Flags</th>
+            <th>Warning Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in view.portfolio_rows %}
+          <tr>
+            <td><strong>{{ row.lead }}</strong></td>
+            <td>{{ row.member_count }}</td>
+            <td>{{ row.avg_billable_util }}</td>
+            <td>{{ row.avg_direct_util }}</td>
+            <td>
+              <svg class="sparkline" width="120" height="28"
+                   data-spark='{{ row.sparkline }}'
+                   data-warn="{{ billable_warning_threshold }}"
+                   data-crit="{{ billable_critical_threshold }}">
+              </svg>
+            </td>
+            <td>{% if row.critical_count > 0 %}<span class="badge badge-critical">{{ row.critical_count }}</span>{% else %}&mdash;{% endif %}</td>
+            <td>{% if row.warning_count > 0 %}<span class="badge badge-warning">{{ row.warning_count }}</span>{% else %}&mdash;{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+</div><!-- /tab-panel -->
+{% endfor %}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- WORKFORCE HEALTH  (shared — rendered only when data is available)         -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+{% if workforce %}
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)" data-open="true">
+    <span class="section-title">Workforce Health</span>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="section-body">
+
+    <!-- Headcount / attrition summary cards -->
+    <div class="summary-cards" style="margin-bottom:16px;">
+      <div class="card blue">
+        <div class="card-num">{{ workforce.headcount_current }}</div>
+        <div class="card-label">Headcount</div>
+      </div>
+      <div class="card green">
+        <div class="card-num">{{ workforce.hires_ytd }}</div>
+        <div class="card-label">Hires YTD</div>
+      </div>
+      <div class="card red">
+        <div class="card-num">{{ workforce.departures_ytd }}</div>
+        <div class="card-label">Departures YTD</div>
+      </div>
+      <div class="card {% if workforce.net_change_ytd >= 0 %}green{% else %}red{% endif %}">
+        <div class="card-num">{{ '%+d' % workforce.net_change_ytd }}</div>
+        <div class="card-label">Net Change YTD</div>
+      </div>
+    </div>
+
+    <!-- PTO tables -->
+    <div class="dq-grid">
+
+      <div class="dq-box">
+        <h3 style="font-size:13px;color:var(--text-primary);margin-bottom:10px;">
+          High PTO Balance &mdash; ≥ 150 hrs ({{ workforce.high_pto_liability | length }})
+        </h3>
+        {% if workforce.high_pto_liability %}
+        <table class="summary-table">
+          <thead><tr><th style="text-align:left;">Employee</th><th style="text-align:right;">Hours Available</th></tr></thead>
+          <tbody>
+            {% for p in workforce.high_pto_liability %}
+            <tr>
+              <td style="font-size:14px;">{{ p.person }}</td>
+              <td style="text-align:right;font-size:14px;font-weight:600;">{{ p.hours | round(1) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="dq-empty">None above threshold.</p>
+        {% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3 style="font-size:13px;color:var(--text-primary);margin-bottom:10px;">
+          Negative PTO Balance ({{ workforce.negative_pto_balances | length }})
+        </h3>
+        {% if workforce.negative_pto_balances %}
+        <table class="summary-table">
+          <thead><tr><th style="text-align:left;">Employee</th><th style="text-align:right;">Hours Available</th></tr></thead>
+          <tbody>
+            {% for p in workforce.negative_pto_balances %}
+            <tr>
+              <td style="font-size:14px;">{{ p.person }}</td>
+              <td style="text-align:right;font-size:14px;font-weight:600;color:var(--crit);">{{ p.hours | round(1) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="dq-empty">No negative balances.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    {% if workforce_discoveries %}
+    <div style="margin-top:16px;">
+      {% for d in workforce_discoveries %}
+      <div class="disc-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <div class="disc-label">AI Discovery</div>
+          <span class="disc-confidence {{ d.confidence }}">{{ d.confidence }}</span>
+        </div>
+        <div class="disc-title">{{ d.title }}</div>
+        <div class="disc-observation">{{ d.observation }}</div>
+        <div class="disc-action"><b>Suggested:</b> {{ d.suggested_action }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- DATA QUALITY  (shared across all views — always visible)                 -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)" data-open="false">
+    <span class="section-title">Data Quality Panel</span>
+    <span class="toggle-icon" style="transform:rotate(-90deg)">▾</span>
+  </div>
+  <div class="section-body collapsed">
+    <div class="dq-grid">
+
+      <div class="dq-box">
+        <h3>In Time Details, No PTO Record (excluded &mdash; {{ excluded_no_pto|length }})</h3>
+        {% if excluded_no_pto %}
+          <ul class="dq-list">{% for name in excluded_no_pto %}<li>{{ name }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None</p>{% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3>In PTO Balances, No Time Entries &mdash; possible missed timesheets ({{ flagged_no_timesheet|length }})</h3>
+        {% if flagged_no_timesheet %}
+          <ul class="dq-list">{% for name in flagged_no_timesheet %}<li>{{ name }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None</p>{% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3>Missing Lookup Combos</h3>
+        {% if missing_lookup_combos %}
+          <ul class="dq-list">{% for combo in missing_lookup_combos %}<li>{{ combo.ProjectType }} / {{ combo.PayCode }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None &mdash; all combos are in Lookups</p>{% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3>Part-Time Employees ({{ pt_employees|length }})</h3>
+        {% if pt_employees %}
+          <ul class="dq-list">{% for name in pt_employees %}<li>{{ name }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None</p>{% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3>Corporate Role Employees &mdash; excluded from trend analysis ({{ corp_roles|length }})</h3>
+        {% if corp_roles %}
+          <ul class="dq-list">{% for name in corp_roles %}<li>{{ name }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None</p>{% endif %}
+      </div>
+
+      <div class="dq-box">
+        <h3>Partial-Period Employees ({{ partial_period_employees|length }})</h3>
+        {% if partial_period_employees %}
+          <ul class="dq-list">{% for name in partial_period_employees %}<li>{{ name }}</li>{% endfor %}</ul>
+        {% else %}<p class="dq-empty">None</p>{% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- CONFIGURATION PANEL  (shared)                                            -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)" data-open="false">
+    <span class="section-title">Configuration (thresholds)</span>
+    <span class="toggle-icon" style="transform:rotate(-90deg)">▾</span>
+  </div>
+  <div class="section-body collapsed">
+    <div class="config-grid">
+      <div class="config-item"><span class="config-key">Billable Benchmark</span><span class="config-val">{{ (cfg.billable_utilization_benchmark * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Billable Warning</span><span class="config-val">{{ (cfg.billable_utilization_warning * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Billable Critical</span><span class="config-val">{{ (cfg.billable_utilization_critical * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Direct Benchmark</span><span class="config-val">{{ (cfg.direct_utilization_benchmark * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Direct Warning</span><span class="config-val">{{ (cfg.direct_utilization_warning * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Direct Critical</span><span class="config-val">{{ (cfg.direct_utilization_critical * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">PTO Warning (hrs)</span><span class="config-val">{{ cfg.pto_warning_threshold_hours }}</span></div>
+      <div class="config-item"><span class="config-key">PTO Critical (hrs)</span><span class="config-val">{{ cfg.pto_critical_threshold_hours }}</span></div>
+      <div class="config-item"><span class="config-key">LWOP High (hrs)</span><span class="config-val">{{ cfg.lwop_high_threshold_hours }}</span></div>
+      <div class="config-item"><span class="config-key">B&amp;P Ratio Threshold</span><span class="config-val">{{ (cfg.bp_ratio_threshold * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Non-Billable Threshold</span><span class="config-val">{{ (cfg.nonbillable_threshold * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">G&amp;A Crowding Threshold</span><span class="config-val">{{ (cfg.ga_crowding_threshold * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Corp Role Threshold</span><span class="config-val">{{ (cfg.corporate_role_threshold * 100)|round(0)|int }}%</span></div>
+      <div class="config-item"><span class="config-key">Base Persistence (periods)</span><span class="config-val">{{ cfg.persistence_threshold }} (auto-scales per tab)</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page-wrap -->
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- EMPLOYEE DETAIL MODAL                                                     -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div id="emp-modal" class="modal-overlay" style="display:none"
+     onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title-block">
+        <div class="modal-title-name" id="modal-emp-name"></div>
+        <div class="modal-title-meta" id="modal-emp-meta"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&#x2715; Close</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                                -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + tabId);
+  if (panel) panel.classList.add('active');
+  const btn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  if (btn) btn.classList.add('active');
+  // Render sparklines that may not have been visible on load
+  renderSparklines();
+  updateRowCount(tabId);
+}
+
+// ── Section toggle ───────────────────────────────────────────────────────────
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  const isOpen = header.dataset.open === 'true';
+  if (isOpen) {
+    body.classList.add('collapsed');
+    icon.style.transform = 'rotate(-90deg)';
+    header.dataset.open = 'false';
+  } else {
+    body.classList.remove('collapsed');
+    icon.style.transform = '';
+    header.dataset.open = 'true';
+  }
+}
+
+// ── Table sort (per team-group; groupId = "{viewId}-{groupIndex}") ────────────
+const sortStates = {};
+function groupIdToViewId(groupId) {
+  return groupId.substring(0, groupId.lastIndexOf('-'));
+}
+function sortTable(colIdx, type, groupId) {
+  const state = sortStates[groupId] || { col: -1, dir: 1 };
+  const dir = (state.col === colIdx) ? -state.dir : 1;
+  sortStates[groupId] = { col: colIdx, dir: dir };
+
+  const tbody = document.getElementById('emp-tbody-' + groupId);
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+
+  rows.sort((a, b) => {
+    const attrMap = { 5:'col6',6:'col7',7:'col8',8:'col9',9:'col10',10:'col11',11:'col12',13:'col14' };
+    const getVal = (row, idx) => {
+      if (attrMap[idx]) return row.dataset[attrMap[idx]] || '';
+      return row.cells[idx] ? row.cells[idx].innerText.trim() : '';
+    };
+    let va = getVal(a, colIdx);
+    let vb = getVal(b, colIdx);
+    if (type === 'num') {
+      va = parseFloat(va) || 0;
+      vb = parseFloat(vb) || 0;
+      return (va - vb) * dir;
+    }
+    return va.localeCompare(vb) * dir;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+  updateRowCount(groupIdToViewId(groupId));
+}
+
+// ── Table filter (per-tab, across all division team-groups) ───────────────────
+function applyFilters(viewId) {
+  const g = id => document.getElementById(id + '-' + viewId);
+  const div  = g('f-division') ? g('f-division').value.toLowerCase()  : '';
+  const lead = g('f-lead')     ? g('f-lead').value.toLowerCase()      : '';
+  const flag = g('f-flag')     ? g('f-flag').value.toLowerCase()      : '';
+  const type = g('f-emptype')  ? g('f-emptype').value                 : '';
+  const q    = g('f-search')   ? g('f-search').value.toLowerCase()    : '';
+
+  const groups = document.querySelectorAll('.team-group[data-view="' + viewId + '"]');
+  groups.forEach(group => {
+    const tbody = group.querySelector('tbody');
+    if (!tbody) return;
+    let anyVisible = false;
+    Array.from(tbody.querySelectorAll('tr')).forEach(row => {
+      const rDiv    = (row.dataset.division || '').toLowerCase();
+      const rLead   = (row.dataset.lead     || '').toLowerCase();
+      const rFlag   = (row.dataset.flag     || '').toLowerCase();
+      const rPt     = row.dataset.pt      === 'PT';
+      const rCorp   = row.dataset.corp    === 'Corp';
+      const rPartial= row.dataset.partial === 'Partial';
+      const rName   = (row.dataset.name   || '').toLowerCase();
+
+      let show = true;
+      if (div  && rDiv  !== div)  show = false;
+      if (lead && rLead !== lead) show = false;
+      if (flag && rFlag !== flag) show = false;
+      if (type === 'PT'      && !rPt)     show = false;
+      if (type === 'FT'      && (rPt || rCorp)) show = false;
+      if (type === 'Corp'    && !rCorp)   show = false;
+      if (type === 'Partial' && !rPartial) show = false;
+      if (q    && !rName.includes(q))    show = false;
+
+      row.style.display = show ? '' : 'none';
+      if (show) anyVisible = true;
+    });
+    group.style.display = anyVisible ? '' : 'none';
+  });
+
+  updateRowCount(viewId);
+}
+
+function resetFilters(viewId) {
+  ['f-division','f-lead','f-flag','f-emptype'].forEach(base => {
+    const el = document.getElementById(base + '-' + viewId);
+    if (el) el.value = '';
+  });
+  const s = document.getElementById('f-search-' + viewId);
+  if (s) s.value = '';
+  applyFilters(viewId);
+}
+
+function updateRowCount(viewId) {
+  const countEl = document.getElementById('f-count-' + viewId);
+  if (!countEl) return;
+  const groups = document.querySelectorAll('.team-group[data-view="' + viewId + '"]');
+  let total = 0, visible = 0;
+  groups.forEach(group => {
+    const rows = group.querySelectorAll('tbody tr');
+    total += rows.length;
+    visible += Array.from(rows).filter(r => r.style.display !== 'none').length;
+  });
+  countEl.textContent = `Showing ${visible} of ${total}`;
+}
+
+// ── SVG Sparklines ───────────────────────────────────────────────────────────
+function renderSparklines() {
+  document.querySelectorAll('svg.sparkline:not([data-rendered])').forEach(svg => {
+    const raw  = svg.dataset.spark;
+    const warn = parseFloat(svg.dataset.warn);
+    const crit = parseFloat(svg.dataset.crit);
+    if (!raw) return;
+
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { return; }
+    if (!data || !data.length) return;
+
+    const W = parseInt(svg.getAttribute('width'))  || 120;
+    const H = parseInt(svg.getAttribute('height')) || 36;
+    const pad = { top: 3, bot: 3, left: 2, right: 2 };
+    const iW = W - pad.left - pad.right;
+    const iH = H - pad.top  - pad.bot;
+    const n  = data.length;
+    const barW = Math.max(2, Math.floor(iW / n) - 1);
+
+    const warnY = pad.top + iH * (1 - warn);
+    const critY = pad.top + iH * (1 - crit);
+
+    svg.innerHTML = '';
+
+    // Warn band
+    const warnBand = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    warnBand.setAttribute('x', pad.left);
+    warnBand.setAttribute('y', warnY);
+    warnBand.setAttribute('width', iW);
+    warnBand.setAttribute('height', critY - warnY);
+    warnBand.setAttribute('fill', '#fef9c3');
+    svg.appendChild(warnBand);
+
+    // Crit band
+    const critBand = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    critBand.setAttribute('x', pad.left);
+    critBand.setAttribute('y', critY);
+    critBand.setAttribute('width', iW);
+    critBand.setAttribute('height', pad.top + iH - critY);
+    critBand.setAttribute('fill', '#fee2e2');
+    svg.appendChild(critBand);
+
+    // Bars
+    data.forEach((d, i) => {
+      const x = pad.left + Math.round(i * (iW / n));
+      const util = Math.min(1.5, Math.max(0, d.billable_util));
+      const barH = Math.round(util * iH);
+      const y = pad.top + iH - barH;
+
+      const noData = d.net_available <= 0;
+      const color = noData ? '#d1d5db'
+        : (util < crit ? '#ef4444'
+          : (util < warn ? '#f59e0b' : '#22c55e'));
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', barH || 1);
+      rect.setAttribute('fill', color);
+      rect.setAttribute('rx', '1');
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+      title.textContent = `${d.period_label}: ${(util*100).toFixed(1)}%`;
+      rect.appendChild(title);
+      svg.appendChild(rect);
+    });
+
+    // Threshold lines
+    const mkLine = (y, color) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', pad.left); line.setAttribute('x2', W - pad.right);
+      line.setAttribute('y1', y);        line.setAttribute('y2', y);
+      line.setAttribute('stroke', color); line.setAttribute('stroke-width','0.8');
+      line.setAttribute('stroke-dasharray','2,2');
+      svg.appendChild(line);
+    };
+    mkLine(warnY, '#f59e0b');
+    mkLine(critY, '#ef4444');
+
+    svg.setAttribute('data-rendered', '1');
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderSparklines();
+  // Initialize row counts for all tabs
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    const viewId = panel.id.replace('tab-', '');
+    updateRowCount(viewId);
+  });
+  // Close modal on Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+});
+
+// ── Employee detail modal ────────────────────────────────────────────────────
+const BILL_WARN = {{ billable_warning_threshold }};
+const BILL_CRIT = {{ billable_critical_threshold }};
+
+function openEmployeeModal(rowEl) {
+  const detail = rowEl.dataset.detail;
+  if (!detail) return;
+
+  let periods;
+  try { periods = JSON.parse(detail); } catch(e) { return; }
+
+  const person  = rowEl.dataset.name    || '';
+  const div     = rowEl.dataset.division || '';
+  const lead    = rowEl.dataset.lead    || '';
+  const org     = rowEl.dataset.org     || '';
+  const type    = rowEl.dataset.type    || '';
+  const flag    = rowEl.dataset.flag    || 'OK';
+  const isPT    = rowEl.dataset.pt      === 'PT';
+  const isCorp  = rowEl.dataset.corp    === 'Corp';
+  const isPartial = rowEl.dataset.partial === 'Partial';
+
+  // Title
+  document.getElementById('modal-emp-name').textContent = person;
+
+  let metaParts = [];
+  if (org)  metaParts.push(org);
+  if (div)  metaParts.push('Division: ' + div);
+  if (lead) metaParts.push('Lead: ' + lead);
+  if (type) metaParts.push('Type: ' + type);
+  let badges = '';
+  if (isPT)      badges += ' <span class="badge badge-pt">PT</span>';
+  if (isCorp)    badges += ' <span class="badge badge-corp">Corp Role</span>';
+  if (isPartial) badges += ' <span class="badge badge-partial">Partial Period</span>';
+  if (flag === 'Critical') badges += ' <span class="badge badge-critical">Critical</span>';
+  else if (flag === 'Warning') badges += ' <span class="badge badge-warning">Warning</span>';
+  else badges += ' <span class="badge badge-ok">OK</span>';
+
+  document.getElementById('modal-emp-meta').innerHTML =
+    metaParts.join('&nbsp;&middot;&nbsp;') + badges;
+
+  document.getElementById('modal-body').innerHTML = buildDetailTable(periods);
+
+  const modal = document.getElementById('emp-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('emp-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function buildDetailTable(periods) {
+  if (!periods || !periods.length) {
+    return '<p style="color:#9ca3af;font-style:italic;">No period data available for this range.</p>';
+  }
+
+  // Compute totals
+  let totals = {
+    billable_hrs:0, nonbillable_hrs:0, ga_hrs:0, bp_hrs:0,
+    ird_hrs:0, overhead_hrs:0, pto_hrs:0, holiday_hrs:0,
+    lwop_hrs:0, other_hrs:0, time_off_hrs:0, net_available:0, effective_avail:0
+  };
+  let activePeriods = 0;
+  let totalBillUtil = 0;
+
+  periods.forEach(p => {
+    Object.keys(totals).forEach(k => { totals[k] += (p[k] || 0); });
+    if (p.net_available > 0) { activePeriods++; totalBillUtil += p.billable_util; }
+  });
+
+  const avgUtil = activePeriods > 0 ? (totalBillUtil / activePeriods) : 0;
+
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const fmt = v => (v === 0 ? '&mdash;' : esc(v.toFixed(1)));
+  const fmtPct = v => esc(v.toFixed(1)) + '%';
+
+  let rows = '';
+  periods.forEach(p => {
+    const noData = p.net_available === 0;
+    let rowClass = noData ? 'no-data'
+      : (p.billable_util < BILL_CRIT * 100 ? 'crit-row'
+        : (p.billable_util < BILL_WARN * 100 ? 'warn-row' : ''));
+
+    rows += `<tr class="${rowClass}">
+      <td>${esc(p.period_label)}</td>
+      <td>${noData ? '&mdash;' : fmtPct(p.billable_util)}</td>
+      <td>${noData ? '&mdash;' : fmtPct(p.direct_util)}</td>
+      <td>${fmt(p.billable_hrs)}</td>
+      <td>${fmt(p.nonbillable_hrs)}</td>
+      <td>${fmt(p.ga_hrs)}</td>
+      <td>${fmt(p.bp_hrs)}</td>
+      <td>${fmt(p.ird_hrs)}</td>
+      <td>${fmt(p.overhead_hrs)}</td>
+      <td>${fmt(p.pto_hrs)}</td>
+      <td>${fmt(p.holiday_hrs)}</td>
+      <td>${fmt(p.lwop_hrs)}</td>
+      <td>${fmt(p.other_hrs)}</td>
+      <td>${fmt(p.time_off_hrs)}</td>
+      <td>${fmt(p.net_available)}</td>
+      <td>${fmt(p.effective_avail)}</td>
+    </tr>`;
+  });
+
+  const totalRow = `<tr>
+    <td>Total / Avg</td>
+    <td>${fmtPct(avgUtil)}</td>
+    <td>&mdash;</td>
+    <td>${fmt(totals.billable_hrs)}</td>
+    <td>${fmt(totals.nonbillable_hrs)}</td>
+    <td>${fmt(totals.ga_hrs)}</td>
+    <td>${fmt(totals.bp_hrs)}</td>
+    <td>${fmt(totals.ird_hrs)}</td>
+    <td>${fmt(totals.overhead_hrs)}</td>
+    <td>${fmt(totals.pto_hrs)}</td>
+    <td>${fmt(totals.holiday_hrs)}</td>
+    <td>${fmt(totals.lwop_hrs)}</td>
+    <td>${fmt(totals.other_hrs)}</td>
+    <td>${fmt(totals.time_off_hrs)}</td>
+    <td>${fmt(totals.net_available)}</td>
+    <td>${fmt(totals.effective_avail)}</td>
+  </tr>`;
+
+  return `<div style="overflow-x:auto;">
+<table class="detail-table">
+  <thead>
+    <tr>
+      <th>Period</th>
+      <th>Bill. Util*</th><th>Direct Util*</th>
+      <th>Billable</th><th>Non-Bill</th><th>G&amp;A</th><th>B&amp;P</th>
+      <th>IR&amp;D</th><th>Overhead</th>
+      <th>PTO</th><th>Holiday</th><th>LWOP</th><th>Other</th>
+      <th>Time-Off Total</th><th>Sched. Hrs</th><th>Adj. Avail*</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+  <tfoot>${totalRow}</tfoot>
+</table>
+</div>
+<p class="modal-footnote">
+  * Utilization = Billable &divide; Adj. Avail (Scheduled Hrs &minus; Time-Off).
+  Rows with Sched.&nbsp;Hrs = 0 mean no timesheet data for that period.
+  Hours column shows rounded values (totals may differ slightly from sum of individual periods).
+</p>`;
+}
+
+// ── Settings panel ────────────────────────────────────────────────────────────
+let _settingsLoaded = false;
+
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('open');
+  if (!_settingsLoaded) loadSettings();
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+async function loadSettings() {
+  const statusEl = document.getElementById('s-status');
+  statusEl.textContent = 'Loading…';
+  try {
+    const res = await fetch('/api/settings');
+    const cfg = await res.json();
+
+    document.getElementById('s-persist').value = cfg.persistence_threshold ?? 3;
+    document.getElementById('s-bench').value   = Math.round((cfg.billable_utilization_benchmark ?? 0.75) * 100);
+    document.getElementById('s-warn').value    = Math.round((cfg.billable_utilization_warning   ?? 0.65) * 100);
+    document.getElementById('s-crit').value    = Math.round((cfg.billable_utilization_critical  ?? 0.50) * 100);
+
+    // Build per-division rows
+    const tbody = document.getElementById('div-tbody');
+    tbody.innerHTML = '';
+    const divisions = cfg.divisions && cfg.divisions.length ? cfg.divisions : ['MS1','MS2','MS3','IS1','BL1'];
+    const overrides = cfg.division_thresholds || {};
+    divisions.forEach(div => {
+      const ov = overrides[div] || {};
+      const bench = ov.billable_utilization_benchmark != null ? Math.round(ov.billable_utilization_benchmark * 100) : '';
+      const warn  = ov.billable_utilization_warning   != null ? Math.round(ov.billable_utilization_warning   * 100) : '';
+      const crit  = ov.billable_utilization_critical  != null ? Math.round(ov.billable_utilization_critical  * 100) : '';
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td class="div-name">${div}</td>
+          <td><input type="number" class="settings-num" data-div="${div}" data-key="bench" min="0" max="100" step="1" value="${bench}" placeholder="—"></td>
+          <td><input type="number" class="settings-num" data-div="${div}" data-key="warn"  min="0" max="100" step="1" value="${warn}"  placeholder="—"></td>
+          <td><input type="number" class="settings-num" data-div="${div}" data-key="crit"  min="0" max="100" step="1" value="${crit}"  placeholder="—"></td>
+        </tr>`);
+    });
+
+    const applyBtn = document.getElementById('s-apply-btn');
+    applyBtn.textContent = cfg.can_rerun ? 'Save & Re-run' : 'Save (upload files to apply)';
+    statusEl.textContent = cfg.can_rerun
+      ? 'Ready — changes will trigger a full re-analysis.'
+      : 'Settings saved to config. Upload files to apply.';
+    _settingsLoaded = true;
+  } catch(e) {
+    statusEl.textContent = 'Could not load settings: ' + e.message;
+  }
+}
+
+async function applySettings() {
+  const statusEl   = document.getElementById('s-status');
+  const applyBtn   = document.getElementById('s-apply-btn');
+  const progWrap   = document.getElementById('s-progress-wrap');
+  const progFill   = document.getElementById('s-progress-fill');
+
+  // Build payload
+  const payload = {
+    persistence_threshold:          parseInt(document.getElementById('s-persist').value) || 3,
+    billable_utilization_benchmark: parseInt(document.getElementById('s-bench').value) / 100,
+    billable_utilization_warning:   parseInt(document.getElementById('s-warn').value)  / 100,
+    billable_utilization_critical:  parseInt(document.getElementById('s-crit').value)  / 100,
+    division_thresholds: {},
+  };
+  // Per-division inputs
+  document.querySelectorAll('#div-tbody input[data-div]').forEach(inp => {
+    const div = inp.dataset.div, key = inp.dataset.key;
+    const val = inp.value.trim();
+    if (val === '' || isNaN(parseInt(val))) return;
+    if (!payload.division_thresholds[div]) payload.division_thresholds[div] = {};
+    const cfgKey = key === 'bench' ? 'billable_utilization_benchmark'
+                 : key === 'warn'  ? 'billable_utilization_warning'
+                 :                   'billable_utilization_critical';
+    payload.division_thresholds[div][cfgKey] = parseInt(val) / 100;
+  });
+
+  applyBtn.disabled = true;
+  statusEl.textContent = 'Saving settings…';
+
+  try {
+    const res  = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) { statusEl.textContent = 'Error: ' + (data.error || 'unknown'); applyBtn.disabled = false; return; }
+
+    if (!data.job_id) {
+      statusEl.textContent = '✓ Settings saved. Upload files to see new flags.';
+      applyBtn.disabled = false;
+      return;
+    }
+
+    // Poll progress
+    progWrap.style.display = 'block';
+    statusEl.textContent = 'Re-running analysis…';
+    const poll = setInterval(async () => {
+      try {
+        const sr = await fetch('/status/' + data.job_id);
+        const s  = await sr.json();
+        progFill.style.width = (s.progress || 0) + '%';
+        statusEl.textContent = s.status_text || 'Running…';
+        if (s.status === 'done') {
+          clearInterval(poll);
+          statusEl.textContent = '✓ Done — loading new dashboard…';
+          window.top.location.href = '/latest';
+        } else if (s.status === 'error') {
+          clearInterval(poll);
+          statusEl.textContent = '✗ Error: ' + s.error;
+          applyBtn.disabled = false;
+        }
+      } catch(e) { /* keep polling */ }
+    }, 800);
+  } catch(e) {
+    statusEl.textContent = 'Request failed: ' + e.message;
+    applyBtn.disabled = false;
+  }
+}
+
+// ── Hide all-zero optional columns in flag detail tables ─────────────────────
+// Only hides columns marked data-opt (PTO, Holiday, LWOP, Other, B&P%, G&A%,
+// IR&D%, Overhead%). Core columns (Bill. Util, Bill. Hrs, Sched. Hrs, etc.)
+// are always kept even when all-zero, since they explain WHY the flag fired.
+(function () {
+  function isZero(text) {
+    const n = parseFloat(text.trim().replace(/[%$,]/g, ''));
+    return !isNaN(n) && n === 0;
+  }
+  document.querySelectorAll('.flag-table').forEach(tbl => {
+    const headers = Array.from(tbl.querySelectorAll('thead th'));
+    const bodyRows = Array.from(tbl.querySelectorAll('tbody tr'));
+    headers.forEach((th, ci) => {
+      if (!th.hasAttribute('data-opt')) return; // only hide optional columns
+      const allZero = bodyRows.every(row => {
+        const cell = row.cells[ci];
+        return !cell || isZero(cell.textContent);
+      });
+      if (allZero) {
+        th.style.display = 'none';
+        bodyRows.forEach(row => { if (row.cells[ci]) row.cells[ci].style.display = 'none'; });
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
