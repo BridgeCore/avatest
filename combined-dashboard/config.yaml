@@ -1,0 +1,206 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Utilization thresholds
+# ─────────────────────────────────────────────────────────────────────────────
+billable_utilization_benchmark: 0.75
+billable_utilization_warning:   0.65
+billable_utilization_critical:  0.50
+direct_utilization_benchmark:   0.75
+direct_utilization_warning:     0.65
+direct_utilization_critical:    0.50
+
+# Per-division threshold overrides — any key listed here takes precedence over
+# the global values above for that division. Unspecified keys fall back to global.
+# Division codes must match PersonDivision values in the Export sheet.
+# Example:
+#   MS1:
+#     billable_utilization_benchmark: 0.90
+#     billable_utilization_warning:   0.80
+#     billable_utilization_critical:  0.65
+division_thresholds: {}
+
+# PTO / LWOP
+pto_warning_threshold_hours:    16
+pto_critical_threshold_hours:   24
+pto_high_threshold_hours:       16
+lwop_high_threshold_hours:      16
+
+# B&P
+bp_ratio_threshold:             0.20
+
+# Non-billable project hours
+nonbillable_threshold:          0.20
+
+# G&A crowding
+ga_crowding_threshold:          0.40
+
+# Non-billable crowding (used in trend 1/2 explanations)
+nonbillable_crowding_threshold: 0.20
+
+# Corporate role exclusion
+corporate_role_threshold:       0.80
+
+# Persistence — consecutive periods required to raise a trend flag
+persistence_threshold:          3
+
+# Excessive PTO flag — minimum active periods in the selected range before
+# this flag can fire. Set to 3 so single vacations (1–2 periods) are not flagged.
+# Automatically suppresses the PTO flag on the Last Period and Last Month tabs.
+pto_min_periods:                3
+
+# Low-utilization root-cause explanation — the minimum share of a flagged
+# run's available hours a single cause (B&P, G&A, IR&D, overhead, or
+# non-billable work) must consume to be reported as "the" driver. Below this
+# share, no single cause dominates and the flag falls back to "Unexplained".
+dominant_driver_min_share:      0.20
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Period detection
+# source: "export"   → derive periods from the Export sheet Date column
+#         "lookups"  → use the period calendar from the Lookups sheet (default)
+# grouping: "monthly"   → one period per calendar month (Jan 2026, Feb 2026...)
+#           "biweekly"  → 14-day periods from earliest date in the data
+# ─────────────────────────────────────────────────────────────────────────────
+period_detection:
+  source: export
+  grouping: monthly
+
+# Sheet names (exact, case-sensitive)
+sheets:
+  billable_ute:     "Billable Ute"
+  export:           "Export"
+  lookups:          "Lookups"
+  unique_employees: "Unique Employees"
+  first_last:       "First Days Last Days"
+  pto_balances:     "Current PTO Balances"
+  portfolio:        "Portfolio Leads Proj Types"
+  discrepancies:    "Discrepancies"
+
+# Exact column names in Export sheet
+columns:
+  export:
+    person:          "Person"
+    person_org:      "PersonOrganization"
+    person_div:      "PersonDivision"
+    date:            "Date"
+    hours:           "Hours"
+    project_subgroup: "ProjectSubGroup"
+    project_code:    "ProjectCode"
+    project_title:   "ProjectTitle"
+    paycode:         "PayCode"
+  portfolio:
+    person:          "Person"
+    lead:            "Portfolio Lead"
+    project_type:    "Project Type"
+
+# Exact ProjectSubGroup label values
+subgroup_labels:
+  billable:    "ProjectBillable"
+  nonbillable: "ProjectNonBillable"
+  bp:          "B&P"
+  ga:          "G&A"
+  ird:         "IR&D"
+  overhead:    "Overhead"
+  pto:         "PTO"
+  holiday:     "Holiday"
+  lwop:        "LWOP"
+  other:       "Other"
+
+paycode_exclude: "UL"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Revenue concentration flags
+# contract_flag_threshold: flag any single contract driving this share of total
+#   company revenue (0.30 = 30%). Division threshold flags any single division.
+# ─────────────────────────────────────────────────────────────────────────────
+revenue_concentration:
+  contract_flag_threshold: 0.30
+  division_flag_threshold: 0.50
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Revenue & Gross Margin (GM) workbook — ported from cfo_dashboard.html
+# ─────────────────────────────────────────────────────────────────────────────
+gm:
+  divisions: ["MS1", "MS2", "MS3", "IS1", "BL1"]
+
+  division_colors:
+    MS1: "#1D4ED8"
+    MS2: "#15803D"
+    MS3: "#C2410C"
+    IS1: "#7C3AED"
+    BL1: "#0369A1"
+
+  # AOP sheet layout — fixed cell addresses (0-based row/col), same as the
+  # original client-side parser. Column C = division names, column D = Jan.
+  aop_layout:
+    col_division: 2   # column C
+    col_first_month: 3  # column D (January)
+    revenue_row_start: 2   # Excel row 3
+    revenue_row_end: 6     # Excel row 7
+    gp_row_start: 11       # Excel row 12
+    gp_row_end: 15         # Excel row 16
+
+  # Division name aliases for the AOP sheet (case-insensitive, matched after
+  # trimming whitespace)
+  aop_division_aliases:
+    ms1: "MS1"
+    ms2: "MS2"
+    fuel: "MS3"
+    ms3: "MS3"
+    insight: "IS1"
+    is1: "IS1"
+    "bcore labs": "BL1"
+    bcorelabs: "BL1"
+    bl1: "BL1"
+
+  # Column alias maps — canonical name -> list of real-world header spellings
+  gm_aliases:
+    "AOP Legend": ["AOP Legend", "AOPLegend", "aop legend"]
+    "Org": ["Org", "ORG", "org", "Organization", "Division"]
+    "Project Code": ["Project Code", "ProjectCode", "Code", "Project"]
+    "Revenue": ["Revenue", "revenue"]
+    "GrossMargin": ["GrossMargin", "Gross Margin", "Gross  Margin", "GM"]
+    "GrossMarginPercentage": ["GrossMarginPercentage", "Gross Margin %", "Gross Margin%", "GrossMargin%", "GM%", "GM %", "Gross Margin Pct"]
+    "TotalDirectCost": ["TotalDirectCost", "TotalDirectCosts", "Total Direct Cost", "Total Direct Costs", "Total Direct Cost "]
+
+  compare_aliases:
+    "Program": ["Program", "ProgramName", "Program Name"]
+    "Portfolio": ["Portfolio", "Portfolio Lead", "PortfolioLead"]
+    "Actuals": ["Actuals", "Actual", "Rev Actual"]
+    "AOP": ["AOP"]
+    "Var": ["Var", "Variance", "Var $"]
+    "GP Actual": ["GP Actual", "GPActual", "GP Act"]
+    "AOP GM%": ["AOP GM%", "AOP GM %", "AOPGM%", "AOP Gross Margin %"]
+    "GP AOP": ["GP AOP", "GPAOP"]
+
+  gm_required_columns: ["AOP Legend", "Org", "Revenue", "GrossMargin", "GrossMarginPercentage", "TotalDirectCost"]
+
+  compare_required_columns: ["Program", "Portfolio", "Actuals", "AOP", "Var", "GP Actual", "AOP GM%", "GP AOP"]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI trend commentary (optional — degrades gracefully if section is absent,
+# `claude` CLI isn't installed, or a call fails; see src/ai_commentary.py)
+# ─────────────────────────────────────────────────────────────────────────────
+ai_commentary:
+  enabled: true
+  timeout_seconds: 45
+  max_flags_per_view: 8
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cross-dataset flagging (optional — degrades to the literal defaults in
+# src/cross_flagger.py if this section is absent)
+# ─────────────────────────────────────────────────────────────────────────────
+workforce:
+  high_pto_threshold_hours: 150
+
+cross_flags:
+  utilization_target: 0.85
+  revenue_variance_target: 0.00
+  # The utilization tracker's PersonDivision codes (BL/IS/MS1/MS2/MS3/Corp)
+  # don't match the GM workbook's Org codes (BL1/IS1/MS1/MS2/MS3) for the
+  # Bcore Labs and Insight Solutions divisions -- confirmed against both real
+  # workbooks. This re-keys the utilization side onto the GM/canonical codes
+  # before joining the two datasets for cross-dataset flagging. Corp has no
+  # GM counterpart and is left as-is.
+  util_division_aliases:
+    BL: BL1
+    IS: IS1

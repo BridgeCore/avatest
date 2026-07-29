@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCore Performance Dashboard</title>
+<style>
+:root {
+  --ground:     #F3F6FA;
+  --surface:    #FFFFFF;
+  --elevated:   #EEF2F8;
+  --border:     #D1D9E8;
+  --text-1:     #111827;
+  --text-2:     #4B5675;
+  --text-3:     #8B93A8;
+  --accent:     #2563EB;
+  --crit:       #B91C1C;
+  --crit-bg:    #FEF2F2;
+  --crit-bd:    #FCA5A5;
+  --warn:       #92400E;
+  --warn-bg:    #FFFBEB;
+  --warn-bd:    #FCD34D;
+  --good:       #065F46;
+  --good-bg:    #ECFDF5;
+  --good-bd:    #A7F3D0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--ground); color: var(--text-1);
+  display: flex; flex-direction: column;
+  font-size: 14px; line-height: 1.5;
+}
+
+/* ── Shell header ─────────────────────────────────────────────────────────── */
+#shell-hdr {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex: 0 0 auto; gap: 12px;
+}
+.shell-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-mark {
+  width: 28px; height: 28px; border-radius: 4px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; color: #0D111A; letter-spacing: -0.5px;
+}
+.brand-name { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-1); }
+.brand-sep { width: 1px; height: 18px; background: var(--border); }
+.brand-sub { font-size: 12px; color: var(--text-3); }
+.shell-meta { font-size: 12px; color: var(--text-3); }
+.shell-actions { display: flex; align-items: center; gap: 10px; }
+.btn-new-run {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent); color: #0D111A;
+  font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  padding: 6px 14px; border-radius: 6px;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-new-run:hover { opacity: .85; }
+
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+#shell-tabs {
+  display: flex; background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  flex: 0 0 auto;
+}
+.shell-tab {
+  background: none; border: none; outline: none; cursor: pointer;
+  padding: 13px 22px; font-size: 13px; font-weight: 600; color: var(--text-2);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+.shell-tab:hover { color: var(--text-1); background: var(--elevated); }
+.shell-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Body / frame container ───────────────────────────────────────────────── */
+#shell-body { flex: 1 1 auto; position: relative; overflow: hidden; }
+.shell-frame {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: none; display: none;
+}
+.shell-frame.active { display: block; }
+
+/* ── Division Health panel ────────────────────────────────────────────────── */
+#frame-flags {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  overflow-y: auto; display: none; background: var(--ground);
+}
+#frame-flags.active { display: block; }
+
+.flags-wrap { padding: 28px; max-width: 1280px; margin: 0 auto; }
+.flags-hdr {
+  display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px;
+}
+.flags-hdr h2 { font-size: 16px; font-weight: 700; color: var(--text-1); }
+.flags-hdr-meta { font-size: 13px; color: var(--text-3); }
+
+.flags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.flags-empty {
+  text-align: center; color: var(--text-3); padding: 80px 0;
+  font-size: 14px;
+}
+
+/* ── Division card ────────────────────────────────────────────────────────── */
+.flag-card {
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  border-left-width: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  overflow: hidden;
+}
+.flag-card.sev-critical { border-left-color: var(--crit); }
+.flag-card.sev-warning  { border-left-color: var(--warn); }
+.flag-card.sev-none     { border-left-color: var(--good); }
+
+.flag-card-body { padding: 16px 18px; }
+
+/* card header */
+.flag-card-hdr {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 8px;
+  margin-bottom: 14px;
+}
+.flag-card-title { font-size: 17px; font-weight: 700; color: var(--text-1); }
+.flag-badge {
+  font-size: 11px; font-weight: 700; border-radius: 3px;
+  padding: 3px 10px; white-space: nowrap; text-transform: uppercase;
+  letter-spacing: .04em; flex-shrink: 0;
+}
+.flag-badge.critical { background: var(--crit-bg); color: var(--crit); border: 1px solid var(--crit-bd); }
+.flag-badge.warning  { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.flag-badge.none     { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-bd); }
+
+/* metrics row */
+.flag-metrics {
+  display: flex; gap: 0; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+}
+.flag-metric {
+  flex: 1; padding: 10px 12px; background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.flag-metric:last-child { border-right: none; }
+.metric-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.metric-val   { font-size: 15px; font-weight: 700; color: var(--text-1); }
+.metric-na    { font-size: 13px; color: var(--text-3); font-style: italic; }
+
+/* reason */
+.flag-reason { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+/* ── Root-cause section ───────────────────────────────────────────────────── */
+.rc-section {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.rc-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-3); margin-bottom: 10px;
+}
+.rc-contract {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: baseline; margin-bottom: 8px;
+}
+.rc-contract-name { font-size: 14px; font-weight: 600; color: var(--text-1); }
+.rc-contract-code { font-size: 12px; color: var(--text-3); font-family: monospace; }
+.rc-contract-share {
+  margin-left: auto; font-size: 12px; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 3px; padding: 2px 8px;
+}
+.rc-nb-pct {
+  font-size: 13px; color: var(--text-2); margin-bottom: 8px;
+}
+.rc-nb-pct strong { color: var(--crit); }
+.rc-narrative {
+  font-size: 13px; color: var(--text-2); line-height: 1.55;
+  background: var(--surface); border-radius: 3px;
+  padding: 10px 12px; margin-bottom: 10px;
+  border-left: 3px solid var(--border);
+}
+.rc-people { list-style: none; }
+.rc-people li {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 5px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.rc-people li:last-child { border-bottom: none; }
+.rc-person-name { color: var(--text-1); }
+.rc-person-hrs  { color: var(--text-3); font-variant-numeric: tabular-nums; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header id="shell-hdr">
+  <div class="shell-brand">
+    <div class="brand-mark">BC</div>
+    <span class="brand-name">BCore</span>
+    <div class="brand-sep"></div>
+    <span class="brand-sub">Performance Dashboard</span>
+  </div>
+  <div class="shell-actions">
+    <span class="shell-meta">Generated {{ generated_date }}</span>
+    <a href="/" class="btn-new-run">+ New Analysis</a>
+  </div>
+</header>
+
+<nav id="shell-tabs" role="tablist">
+  <button class="shell-tab active" data-target="frame-gm"    role="tab">Revenue &amp; Gross Margin</button>
+  <button class="shell-tab"        data-target="frame-util"  role="tab">Utilization</button>
+  <button class="shell-tab"        data-target="frame-flags" role="tab">Division Health</button>
+</nav>
+
+<div id="shell-body">
+  <iframe id="frame-gm"   class="shell-frame active" title="Revenue & Gross Margin"  srcdoc="{{ gm_html }}"></iframe>
+  <iframe id="frame-util" class="shell-frame"         title="Utilization dashboard"  srcdoc="{{ util_html }}"></iframe>
+
+  <div id="frame-flags" class="shell-frame">
+    <div class="flags-wrap">
+      {% set total = division_health | length %}
+      {% set n_crit = division_health | selectattr("severity","eq","critical") | list | length %}
+      {% set n_warn = division_health | selectattr("severity","eq","warning")  | list | length %}
+      <div class="flags-hdr">
+        <h2>Division Health</h2>
+        {% if total %}
+        <span class="flags-hdr-meta">
+          {{ total }} division{{ "s" if total != 1 }} —
+          {{ n_crit }} critical, {{ n_warn }} warning
+        </span>
+        {% endif %}
+      </div>
+
+      {% if division_health %}
+      <div class="flags-grid">
+        {% for f in division_health %}
+        <div class="flag-card sev-{{ f.severity }}">
+          <div class="flag-card-body">
+
+            <div class="flag-card-hdr">
+              <span class="flag-card-title">{{ f.division }}</span>
+              <span class="flag-badge {{ f.severity }}">{{ f.severity | upper }}</span>
+            </div>
+
+            <div class="flag-metrics">
+              <div class="flag-metric">
+                <div class="metric-label">Billable Util</div>
+                {% if f.avg_billable_util is not none %}
+                  <div class="metric-val">{{ "%.1f"|format(f.avg_billable_util * 100) }}%</div>
+                {% else %}
+                  <div class="metric-na">No data</div>
+                {% endif %}
+              </div>
+              <div class="flag-metric">
+                <div class="metric-label">MTD Revenue</div>
+                {% if f.mtd_variance_pct is not none %}
+                  <div class="metric-val">{{ "%+.1f"|format(f.mtd_variance_pct * 100) }}%</div>
+                {% else %}
+                  <div class="metric-na">N/A</div>
+                {% endif %}
+              </div>
+              <div class="flag-metric">
+                <div class="metric-label">YTD Revenue</div>
+                {% if f.ytd_variance_pct is not none %}
+                  <div class="metric-val">{{ "%+.1f"|format(f.ytd_variance_pct * 100) }}%</div>
+                {% else %}
+                  <div class="metric-na">N/A</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="flag-reason">{{ f.reason }}</div>
+
+            {% if f.contract_title %}
+            <div class="rc-section">
+              <div class="rc-label">Root Cause</div>
+              <div class="rc-contract">
+                <span class="rc-contract-name">{{ f.contract_title }}</span>
+                <span class="rc-contract-code">{{ f.contract_code }}</span>
+                {% if f.contract_share is not none %}
+                <span class="rc-contract-share">{{ "%.0f"|format(f.contract_share * 100) }}% of hrs</span>
+                {% endif %}
+              </div>
+              {% if f.nb_pct_current is not none %}
+              <div class="rc-nb-pct">
+                Non-billable this period:
+                <strong>{{ "%.0f"|format(f.nb_pct_current * 100) }}%</strong>
+              </div>
+              {% endif %}
+              {% if f.narrative %}
+              <div class="rc-narrative">{{ f.narrative }}</div>
+              {% endif %}
+              {% if f.top_people %}
+              <div class="rc-label">Top non-billable contributors</div>
+              <ul class="rc-people">
+                {% for p in f.top_people %}
+                <li>
+                  <span class="rc-person-name">{{ p.person }}</span>
+                  <span class="rc-person-hrs">{{ p.hours | round(0) | int }} hrs NB</span>
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="flags-empty">No cross-dataset flags for this run.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('shell-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.shell-tab');
+  if (!btn) return;
+  document.querySelectorAll('.shell-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.shell-frame').forEach(f =>
+    f.classList.toggle('active', f.id === btn.dataset.target)
+  );
+});
+</script>
+</body>
+</html>

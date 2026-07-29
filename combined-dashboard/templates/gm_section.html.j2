@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCore Performance Dashboard</title>
+<style>
+:root {
+  --ground:   #F3F6FA;
+  --surface:  #FFFFFF;
+  --surface-2:#F0F4FA;
+  --border:   #D1D9E8;
+  --text:     #111827;
+  --text-2:   #4B5675;
+  --text-3:   #8B93A8;
+  --accent:   #2563EB;
+  --blue:     #2563EB;
+  --pos:      #059669;
+  --neg:      #DC2626;
+  --pos-bg:   #ECFDF5;
+  --neg-bg:   #FEF2F2;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --r:        3px;
+  --crit:     #B91C1C;
+  --crit-bg:  #FEF2F2;
+  --crit-bd:  #FCA5A5;
+  --warn:     #92400E;
+  --warn-bg:  #FFFBEB;
+  --warn-bd:  #FCD34D;
+  --good:     #065F46;
+  --good-bg:  #ECFDF5;
+  --good-bd:  #A7F3D0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#hdr {
+  background: var(--ground);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.hdr-brand { display: flex; align-items: baseline; gap: 12px; }
+.hdr-wordmark { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
+.hdr-div { width: 1px; height: 14px; background: var(--border); }
+.hdr-sub { font-size: 12px; color: var(--text-3); }
+.hdr-right { display: flex; align-items: center; gap: 16px; }
+#date-range { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+
+#dash { padding: 24px; max-width: 1560px; margin: 0 auto; }
+
+#warn-banner {
+  background: var(--warn-bg); border: 1px solid var(--warn-bd);
+  border-radius: var(--r); padding: 10px 16px; margin-bottom: 18px;
+  font-size: 13px; color: var(--warn); border-left: 4px solid var(--warn);
+}
+
+.tab-row {
+  display: flex; margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 10px 18px; font-size: 12px; font-weight: 600;
+  letter-spacing: .06em; color: var(--text-3); border: none;
+  background: transparent; cursor: pointer; transition: color .15s;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--ground); border: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px;
+}
+.kpi-card.vpos { border-left: 3px solid var(--pos); }
+.kpi-card.vneg { border-left: 3px solid var(--neg); }
+.kpi-card.vna  { border-left: 3px solid var(--border); }
+.kpi-eye {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 8px;
+}
+.kpi-val {
+  font-size: 24px; font-weight: 700; letter-spacing: -.02em;
+  line-height: 1.1; font-variant-numeric: tabular-nums; margin-bottom: 5px;
+}
+.kpi-val.pos { color: var(--pos); }
+.kpi-val.neg { color: var(--neg); }
+.kpi-sub { font-size: 11px; color: var(--text-2); }
+.kpi-sub.pos { color: var(--pos); }
+.kpi-sub.neg { color: var(--neg); }
+
+.ai-card {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 20px; margin-bottom: 20px;
+}
+.disc-card {
+  background: #F5F0FF; border: 1px solid #DDD0FF;
+  border-left: 4px solid #7C3AED;
+  border-radius: var(--r); padding: 14px 18px; margin-bottom: 12px;
+}
+.disc-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #9B72DC; margin-bottom: 6px;
+}
+.disc-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.disc-observation { font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+.disc-action { font-size: 12px; color: var(--text); }
+.disc-confidence {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+}
+.disc-confidence.high   { background: #EDE9FE; color: #5B21B6; }
+.disc-confidence.medium { background: #EEF2FF; color: #4338CA; }
+.disc-confidence.low    { background: #F1F5F9; color: #64748B; }
+.ai-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ai-card-headline { font-size: 14px; font-weight: 700; }
+.ai-card-narrative { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+.ai-card-action { font-size: 12px; color: var(--text); }
+.ai-card-action b { font-weight: 700; }
+.ai-risk-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 10px; white-space: nowrap;
+}
+.ai-risk-badge.high   { background: var(--crit-bg); color: var(--crit); border: 1px solid var(--crit-bd); }
+.ai-risk-badge.medium { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.ai-risk-badge.low    { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-bd); }
+
+.charts-ab { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.chart-c { margin-bottom: 20px; }
+.chart-card {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px;
+}
+.chart-lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--text-2); margin-bottom: 14px;
+}
+.chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 11px; color: var(--text-2); }
+.chart-legend-item { display: flex; align-items: center; gap: 5px; }
+.chart-legend-swatch { width: 14px; height: 2px; border-radius: 1px; }
+.chart-legend-swatch.dashed { background-image: linear-gradient(to right, currentColor 60%, transparent 40%); background-size: 6px 2px; height: 2px; }
+svg.linechart { display: block; width: 100%; }
+
+.tbl-card {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); margin-bottom: 10px; overflow: hidden;
+}
+.tbl-hdr {
+  padding: 14px 18px 12px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--border);
+}
+.tbl-title { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-2); }
+.tbl-note { font-size: 10px; color: var(--text-3); }
+.tbl-scroll { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th {
+  padding: 9px 13px; text-align: right; background: var(--surface);
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-3); border-bottom: 1px solid var(--border);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+thead th.l { text-align: left; }
+thead th:hover { color: var(--text); }
+.sa { margin-left: 3px; opacity: .4; }
+th.asc .sa::after { content: '↑'; opacity: 1; }
+th.desc .sa::after { content: '↓'; opacity: 1; }
+th .sa::after { content: '↕'; }
+
+tbody tr { border-bottom: 1px solid var(--surface); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface); }
+tbody td {
+  padding: 9px 13px; text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+tbody td.l { text-align: left; }
+td.pname { font-weight: 500; max-width: 230px; white-space: normal; line-height: 1.3; }
+td.pcode { font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-2); }
+td.pdiv  { font-family: 'Courier New', monospace; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.vp { color: var(--pos); font-weight: 500; }
+.vn { color: var(--neg); font-weight: 500; }
+.vm { color: var(--text-3); }
+tr.ralert td { background: var(--neg-bg); }
+tr.ralert:hover td { background: #FECACA; }
+tr.proj-extra { display: none; }
+.proj-expand-bar {
+  text-align: center; padding: 10px;
+  border-top: 1px solid var(--border);
+}
+.proj-expand-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--accent); font-size: 12px; font-weight: 600;
+  padding: 5px 16px; cursor: pointer; transition: background .15s;
+}
+.proj-expand-btn:hover { background: var(--surface); }
+
+.cmp-panel {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); margin-bottom: 24px; overflow: hidden;
+}
+.cmp-hdr {
+  padding: 13px 18px; display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer; user-select: none;
+  transition: background .1s;
+}
+.cmp-hdr:hover { background: var(--surface); }
+.cmp-hdr-title { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-2); }
+.cmp-tog { font-size: 10px; color: var(--text-3); transition: transform .2s; }
+.cmp-tog.open { transform: rotate(180deg); }
+.cmp-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+.cmp-body.open { max-height: 1400px; }
+.cmp-inner { padding: 14px 18px; border-top: 1px solid var(--border); }
+.cmp-ctrl { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.cmp-ctrl label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.cmp-ctrl select {
+  border: 1px solid var(--border); background: var(--ground);
+  border-radius: var(--r); padding: 5px 10px; font-size: 12px; color: var(--text); cursor: pointer;
+}
+.cmp-ctrl select:focus { outline: 1px solid var(--text); }
+
+/* ── Revenue Concentration ─────────────────────────────────────────────────── */
+.conc-panel {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); margin-bottom: 16px; overflow: hidden;
+}
+.conc-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.conc-hdr-left { display: flex; align-items: center; gap: 10px; }
+.conc-hdr-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.conc-flag-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 3px;
+  background: #FEF2F2; color: var(--neg); border: 1px solid #FCA5A5;
+}
+.conc-body { padding: 18px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .conc-body { grid-template-columns: 1fr; } }
+
+.conc-stacked-bar {
+  display: flex; height: 22px; border-radius: 4px; overflow: hidden;
+  margin-bottom: 12px; background: var(--surface);
+}
+.conc-seg { height: 100%; transition: opacity .15s; }
+.conc-seg:hover { opacity: .75; cursor: default; }
+
+.conc-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.conc-tbl th { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase;
+  letter-spacing: .04em; padding: 4px 8px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+.conc-tbl th.r, .conc-tbl td.r { text-align: right; }
+.conc-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+.conc-tbl tr:last-child td { border-bottom: none; }
+.conc-tbl tr:hover td { background: var(--surface); }
+.conc-div-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+.conc-flag { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+  background: #FEF2F2; color: var(--neg); border: 1px solid #FCA5A5; margin-left: 6px; white-space: nowrap; }
+.conc-pct-bar-wrap { width: 60px; display: inline-flex; align-items: center; gap: 5px; }
+.conc-pct-bar { height: 6px; border-radius: 3px; background: var(--blue); flex-shrink: 0; }
+.conc-pct-bar.flagged { background: var(--neg); }
+
+.scan-panel {
+  background: var(--ground); border: 1px solid var(--border);
+  border-radius: var(--r); margin-bottom: 16px; overflow: hidden;
+}
+.scan-hdr {
+  padding: 12px 18px; display: flex; align-items: center;
+  justify-content: space-between; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.scan-hdr:hover { background: var(--surface-2); }
+.scan-toggle { font-size: 12px; color: var(--text-3); transition: transform .2s; }
+.scan-panel.open .scan-toggle { transform: rotate(90deg); }
+.scan-hdr-left { display: flex; align-items: center; gap: 10px; }
+.scan-hdr-title { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-2); }
+.scan-summary { font-size: 11px; color: var(--text-3); }
+.scan-dismiss {
+  font-size: 11px; color: var(--text-3); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 3px 10px; cursor: pointer; transition: color .15s;
+}
+.scan-dismiss:hover { color: var(--text); }
+.scan-body { padding: 14px 18px; overflow-x: auto; }
+.scan-tbl { width: 100%; }
+.scan-tbl thead th {
+  cursor: default !important; user-select: none;
+  padding: 8px 12px; text-align: right; background: var(--surface);
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.scan-tbl thead th.l { text-align: left; }
+.scan-tbl tbody tr { border-bottom: 1px solid var(--surface); }
+.scan-tbl tbody td { padding: 8px 12px; font-size: 12px; text-align: right; white-space: nowrap; }
+.scan-tbl tbody td.l { text-align: left; }
+.scan-tbl td.sheetname { font-family: 'Courier New', monospace; font-size: 11px; }
+.stype { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.stype-gm      { background: #EFF6FF; color: var(--blue); border: 1px solid #BFDBFE; }
+.stype-aop     { background: var(--pos-bg); color: var(--pos); border: 1px solid var(--good-bd); }
+.stype-compare { background: #F5F0FF; color: #6D28D9; border: 1px solid #DDD0FF; }
+.stype-ignored { background: var(--surface); color: var(--text-3); border: 1px solid var(--border); }
+.scan-ok  { color: var(--pos); font-size: 11px; }
+.scan-warn { color: var(--neg); font-size: 11px; }
+.scan-muted { color: var(--text-3); }
+
+@media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 800px)  { .charts-ab { grid-template-columns: 1fr; } }
+@media (max-width: 640px)  {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  #dash { padding: 12px; }
+}
+@media (max-width: 400px)  { .kpi-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-brand">
+    <span class="hdr-wordmark">BCore Dashboard</span>
+    <div class="hdr-div"></div>
+    <span class="hdr-sub">Revenue &amp; Gross Margin</span>
+  </div>
+  <div class="hdr-right">
+    <span id="date-range">{{ date_range }}</span>
+  </div>
+</header>
+
+<main id="dash">
+{% if not has_data %}
+  <div id="warn-banner" role="alert">
+    ⚠ No GM Report data was parsed. See the Workbook Scan below — sheet names must contain
+    "GM Report" and column headers must match expected names.
+  </div>
+{% elif not has_aop %}
+  <div id="warn-banner" role="alert">
+    ⚠ AOP data not found — displaying actuals only. Add a sheet with "AOP" in its name to
+    enable plan comparisons.
+  </div>
+{% endif %}
+
+{% if scan.issues_count > 0 or not has_data %}
+<div class="scan-panel" id="scan-panel">
+  <div class="scan-hdr" onclick="toggleScan()">
+    <div class="scan-hdr-left">
+      <span class="scan-toggle">&#9658;</span>
+      <span class="scan-hdr-title">Workbook Scan</span>
+      <span class="scan-summary">
+        {{ scan.total }} sheets total &mdash;
+        <strong style="color:var(--blue)">{{ scan.gm_sheets }} GM Report</strong>,
+        <strong style="color:var(--pos)">{{ scan.aop_sheets }} AOP</strong>,
+        <strong style="color:#7C3AED">{{ scan.cmp_sheets }} Compare</strong>,
+        {{ scan.ignored }} ignored
+        {% if scan.issues_count > 0 %}
+          &mdash; <strong style="color:var(--neg)">⚠ {{ scan.issues_count }} sheet(s) with issues</strong>
+        {% endif %}
+      </span>
+    </div>
+    <button class="scan-dismiss" id="scan-dismiss" onclick="event.stopPropagation();document.getElementById('scan-panel').style.display='none'">Dismiss</button>
+  </div>
+  <div class="scan-body" id="scan-body" style="display:none">
+    <table class="scan-tbl">
+      <thead><tr>
+        <th class="l">Sheet Name</th><th class="l">Detected As</th>
+        <th class="l">Month</th><th class="l">Status</th>
+      </tr></thead>
+      <tbody>
+        {% for s in scan.rows %}
+        <tr>
+          <td class="l sheetname">{{ s.name }}</td>
+          <td class="l"><span class="stype stype-{{ s.type }}">{{ s.type }}</span></td>
+          <td class="l">{{ s.month or '—' }}</td>
+          <td class="l">
+            {% if s.issues %}
+              <span class="scan-warn">⚠ {{ s.issues|join('; ') }}</span>
+            {% elif s.type != 'ignored' %}
+              <span class="scan-ok">✓ {{ s.rows }} row(s) parsed</span>
+            {% else %}
+              <span class="scan-muted">—</span>
+            {% endif %}
+            {% if s.type == 'aop' and s.cell_preview %}
+              <details style="margin-top:6px"><summary style="cursor:pointer;font-size:10px;color:var(--text-3)">Cell preview</summary>
+                <pre style="font-size:10px;color:var(--text-2);margin-top:4px;white-space:pre-wrap">{{ s.cell_preview|join('\n') }}</pre></details>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if has_data and concentration.divisions %}
+<div class="conc-panel">
+  <div class="conc-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'grid':'none'">
+    <div class="conc-hdr-left">
+      <span class="conc-hdr-title">Revenue Concentration &mdash; {{ concentration.total_revenue_fmt }} total</span>
+      {% if concentration.has_flags %}
+      <span class="conc-flag-badge">⚠ Concentration Risk</span>
+      {% endif %}
+    </div>
+    <span style="font-size:11px;color:var(--text-2)">▾ toggle</span>
+  </div>
+  <div class="conc-body">
+
+    <!-- Division breakdown -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;">By Division</div>
+      <div class="conc-stacked-bar">
+        {% for d in concentration.divisions %}
+        <div class="conc-seg" style="width:{{ d.pct }}%;background:{{ d.color }};" title="{{ d.division }}: {{ d.pct }}%"></div>
+        {% endfor %}
+      </div>
+      <table class="conc-tbl">
+        <thead><tr><th>Division</th><th class="r">Revenue</th><th class="r">Share</th></tr></thead>
+        <tbody>
+        {% for d in concentration.divisions %}
+        <tr>
+          <td>
+            <span class="conc-div-dot" style="background:{{ d.color }}"></span>{{ d.division }}
+            {% if d.flagged %}<span class="conc-flag">≥ {{ concentration.division_threshold_pct }}%</span>{% endif %}
+          </td>
+          <td class="r">{{ d.revenue_fmt }}</td>
+          <td class="r">
+            <div class="conc-pct-bar-wrap">
+              <div class="conc-pct-bar {% if d.flagged %}flagged{% endif %}" style="width:{{ [d.pct, 100]|min }}px"></div>
+              <span>{{ d.pct }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Contract breakdown -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;">
+        By Contract &mdash; flagged if &gt; {{ concentration.contract_threshold_pct }}% of total
+      </div>
+      <table class="conc-tbl">
+        <thead><tr><th>Contract</th><th>Div</th><th class="r">Revenue</th><th class="r">Share</th></tr></thead>
+        <tbody>
+        {% for c in concentration.contracts %}
+        <tr>
+          <td>
+            {{ c.name }}
+            {% if c.flagged %}<span class="conc-flag">⚠ {{ c.pct }}%</span>{% endif %}
+          </td>
+          <td style="color:var(--text-2)">{{ c.division }}</td>
+          <td class="r">{{ c.revenue_fmt }}</td>
+          <td class="r">
+            <div class="conc-pct-bar-wrap">
+              <div class="conc-pct-bar {% if c.flagged %}flagged{% endif %}" style="width:{{ [c.pct, 100]|min }}px"></div>
+              <span>{{ c.pct }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+{% if has_data %}
+<nav class="tab-row" id="tab-bar" aria-label="Division filter">
+  <button class="tab active" data-div="ALL">All Divisions</button>
+  {% for div in divisions %}
+  <button class="tab" data-div="{{ div }}">{{ div }}{% if div == 'MS3' %} <sup title="Fuel division">†</sup>{% endif %}</button>
+  {% endfor %}
+</nav>
+
+{% for div_key, tab in tabs.items() %}
+<div class="tab-panel{% if loop.first %} active{% endif %}" data-tab="{{ div_key }}">
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-eye">YTD Revenue — Actual</div>
+      <div class="kpi-val">{{ tab.kpis.ytd_rev }}</div>
+      <div class="kpi-sub">{{ tab.kpis.ytd_rev_aop }}</div>
+    </div>
+    <div class="kpi-card {{ tab.kpis.rev_var_class }}">
+      <div class="kpi-eye">Revenue vs AOP</div>
+      <div class="kpi-val {{ tab.kpis.rev_var_word }}">{{ tab.kpis.rev_var }}</div>
+      <div class="kpi-sub {{ tab.kpis.rev_var_word }}">{{ tab.kpis.rev_var_pct }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-eye">YTD Gross Margin — Actual</div>
+      <div class="kpi-val">{{ tab.kpis.ytd_gm }}</div>
+      <div class="kpi-sub">{{ tab.kpis.ytd_gmp }}</div>
+    </div>
+    <div class="kpi-card {{ tab.kpis.gm_var_class }}">
+      <div class="kpi-eye">Gross Margin vs AOP</div>
+      <div class="kpi-val {{ tab.kpis.gm_var_word }}">{{ tab.kpis.gm_var }}</div>
+      <div class="kpi-sub {{ tab.kpis.gm_var_word }}">{{ tab.kpis.gm_var_pct }}</div>
+    </div>
+  </div>
+
+  {% if tab.ai_commentary %}
+  <div class="ai-card">
+    <div class="ai-card-top">
+      <div class="ai-card-headline">{{ tab.ai_commentary.headline }}</div>
+      <span class="ai-risk-badge {{ tab.ai_commentary.risk_level }}">{{ tab.ai_commentary.risk_level }} risk</span>
+    </div>
+    <div class="ai-card-narrative">{{ tab.ai_commentary.narrative }}</div>
+    <div class="ai-card-action"><b>Recommended:</b> {{ tab.ai_commentary.recommended_action }}</div>
+  </div>
+  {% endif %}
+
+  {% if tab.discoveries %}
+  {% for d in tab.discoveries %}
+  <div class="disc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <div class="disc-label">AI Discovery</div>
+      <span class="disc-confidence {{ d.confidence }}">{{ d.confidence }}</span>
+    </div>
+    <div class="disc-title">{{ d.title }}</div>
+    <div class="disc-observation">{{ d.observation }}</div>
+    <div class="disc-action"><b>Suggested:</b> {{ d.suggested_action }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="charts-ab">
+    <div class="chart-card">
+      <div class="chart-lbl">{{ tab.charts.chart_a_label }}</div>
+      {{ tab.charts.chart_a_svg }}
+      <div class="chart-legend">
+        {% for l in tab.charts.legend_a %}
+        <span class="chart-legend-item"><span class="chart-legend-swatch{% if l.dashed %} dashed{% endif %}" style="color:{{ l.color }};background-color:{{ l.color }}"></span>{{ l.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-lbl">{{ tab.charts.chart_b_label }}</div>
+      {{ tab.charts.chart_b_svg }}
+      <div class="chart-legend">
+        {% for l in tab.charts.legend_b %}
+        <span class="chart-legend-item"><span class="chart-legend-swatch{% if l.dashed %} dashed{% endif %}" style="color:{{ l.color }};background-color:{{ l.color }}"></span>{{ l.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="chart-c">
+    <div class="chart-card">
+      <div class="chart-lbl">{{ tab.charts.chart_c_label }}</div>
+      {{ tab.charts.chart_c_svg }}
+      <div class="chart-legend">
+        {% for l in tab.charts.legend_c %}
+        <span class="chart-legend-item"><span class="chart-legend-swatch" style="color:{{ l.color }};background-color:{{ l.color }}"></span>{{ l.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-hdr">
+      <span class="tbl-title">{{ tab.table.title }}</span>
+      <span class="tbl-note">AOP is division-level — project AOP variance not available</span>
+    </div>
+    <div class="tbl-scroll">
+      <table class="sortable-tbl">
+        <thead>
+          <tr>
+            <th class="l" data-sort="name">Project <span class="sa"></span></th>
+            <th class="l" data-sort="code">Code <span class="sa"></span></th>
+            <th class="l" data-sort="division">Div <span class="sa"></span></th>
+            <th class="l" data-sort="portfolio_lead">Portfolio Lead <span class="sa"></span></th>
+            <th data-sort="ytd_rev" class="desc">YTD Revenue <span class="sa"></span></th>
+            <th data-sort="ytd_gm">YTD GM <span class="sa"></span></th>
+            <th data-sort="ytd_gmp">YTD GM% <span class="sa"></span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in tab.table.rows %}
+          <tr class="{{ 'ralert' if row.alert else '' }}{{ ' proj-extra' if loop.index > 5 else '' }}">
+            <td class="pname l" data-v="{{ row.name }}">{{ row.name }}</td>
+            <td class="pcode l" data-v="{{ row.code }}">{{ row.code }}</td>
+            <td class="pdiv l" data-v="{{ row.division }}">{{ row.division }}{% if row.division == 'MS3' %} <sup title="Fuel division">†</sup>{% endif %}</td>
+            <td class="l" data-v="{{ row.portfolio_lead }}">{{ row.portfolio_lead }}</td>
+            <td data-v="{{ row.ytd_rev }}">{{ row.ytd_rev_fmt }}</td>
+            <td data-v="{{ row.ytd_gm }}">{{ row.ytd_gm_fmt }}</td>
+            <td data-v="{{ row.ytd_gmp }}">{{ row.ytd_gmp_fmt }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-3)">No projects for this division.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if tab.table.rows | length > 5 %}
+    <div class="proj-expand-bar" id="proj-expand-{{ tab.id }}">
+      <button class="proj-expand-btn" onclick="expandProjects('{{ tab.id }}')">
+        Show all {{ tab.table.rows | length }} projects
+      </button>
+    </div>
+    {% endif %}
+    {% if tab.table.rows | selectattr('division', 'eq', 'MS3') | list %}
+    <div style="padding:8px 18px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);">
+      <sup>†</sup> MS3 = Fuel division
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="cmp-panel">
+    <div class="cmp-hdr" role="button" tabindex="0" aria-expanded="false" onclick="bcToggleCmp(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bcToggleCmp(this)}">
+      <span class="cmp-hdr-title">Month-over-Month Compare</span>
+      <span class="cmp-tog" aria-hidden="true">▼</span>
+    </div>
+    <div class="cmp-body">
+      <div class="cmp-inner">
+        <div class="cmp-ctrl">
+          <label for="mo-sel-{{ div_key }}">Month</label>
+          <select id="mo-sel-{{ div_key }}" onchange="bcFilterCompare(this)">
+            <option value="ALL">All months</option>
+            {% for m in tab.compare.months %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr>
+              <th class="l">Program</th><th class="l">Portfolio Lead</th><th class="l">Month</th>
+              <th>Rev Actual</th><th>Rev AOP</th><th>Rev Var</th>
+              <th>GP Actual</th><th>AOP GM%</th><th>GP AOP</th>
+            </tr></thead>
+            <tbody>
+              {% for row in tab.compare.rows %}
+              <tr data-month="{{ row.month }}">
+                <td class="l">{{ row.program }}</td>
+                <td class="l">{{ row.portfolio }}</td>
+                <td class="l">{{ row.month }}</td>
+                <td>{{ row.actuals_fmt }}</td>
+                <td>{{ row.aop_fmt }}</td>
+                <td class="{{ row.var_class }}">{{ row.var_fmt }}</td>
+                <td>{{ row.gp_actual_fmt }}</td>
+                <td>{{ row.gmp_display }}</td>
+                <td>{{ row.gp_aop_fmt }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-3)">No compare data.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+</main>
+
+<script>
+function toggleScan() {
+  const panel = document.getElementById('scan-panel');
+  const body  = document.getElementById('scan-body');
+  const open  = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  panel.classList.toggle('open', !open);
+}
+
+document.getElementById('tab-bar') && document.getElementById('tab-bar').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  const div = btn.dataset.div;
+  document.querySelectorAll('#tab-bar .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === div));
+});
+
+function bcToggleCmp(hdr) {
+  const body = hdr.nextElementSibling;
+  const tog = hdr.querySelector('.cmp-tog');
+  const open = body.classList.toggle('open');
+  tog.classList.toggle('open', open);
+  hdr.setAttribute('aria-expanded', String(open));
+}
+
+function bcFilterCompare(sel) {
+  const month = sel.value;
+  const table = sel.closest('.cmp-inner').querySelector('tbody');
+  table.querySelectorAll('tr[data-month]').forEach(tr => {
+    tr.style.display = (month === 'ALL' || tr.dataset.month === month) ? '' : 'none';
+  });
+}
+
+function expandProjects(tabId) {
+  const bar = document.getElementById('proj-expand-' + tabId);
+  if (!bar) return;
+  const tbl = bar.closest('.tbl-card').querySelector('tbody');
+  tbl.querySelectorAll('tr.proj-extra').forEach(tr => tr.style.display = '');
+  bar.style.display = 'none';
+}
+
+// Generic client-side table sorter — no external dependency.
+document.querySelectorAll('table.sortable-tbl').forEach(table => {
+  const thead = table.querySelector('thead');
+  thead.querySelectorAll('th[data-sort]').forEach((th, colIdx) => {
+    th.addEventListener('click', () => {
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter(tr => tr.cells.length > 1);
+      const asc = !th.classList.contains('asc');
+      thead.querySelectorAll('th').forEach(h => h.classList.remove('asc', 'desc'));
+      th.classList.add(asc ? 'asc' : 'desc');
+      const idx = Array.from(th.parentNode.children).indexOf(th);
+      rows.sort((a, b) => {
+        const va = a.cells[idx].dataset.v, vb = b.cells[idx].dataset.v;
+        const na = parseFloat(va), nb = parseFloat(vb);
+        const bothNumeric = !isNaN(na) && !isNaN(nb);
+        const cmp = bothNumeric ? na - nb : String(va).localeCompare(String(vb));
+        return asc ? cmp : -cmp;
+      });
+      rows.forEach(tr => { tr.style.display = ''; tbody.appendChild(tr); });
+      // Hide the expand bar once user has sorted (they're already seeing all)
+      const card = table.closest('.tbl-card');
+      if (card) { const bar = card.querySelector('.proj-expand-bar'); if (bar) bar.style.display = 'none'; }
+    });
+  });
+});
+</script>
+</body>
+</html>
